@@ -148,7 +148,7 @@ def DreamAtlasGenerator(settings, seed=None):
         for province in province_list[plane]:
             weights[province.index] = province.size
             shapes[province.index] = province.shape
-        map_class.pixel_map[plane] = find_pixel_ownership(layout.coordinates[plane], map_class.map_size[plane], weights, shapes, hwrap=True, vwrap=True, scale_down=2)
+        map_class.pixel_map[plane] = find_pixel_ownership(layout.coordinates[plane], map_class.map_size[plane], weights, shapes, hwrap=True, vwrap=True, scale_down=8)
         map_class.pixel_owner_list[plane] = pb_pixel_allocation(map_class.pixel_map[plane])
 
         height_dict = {0: -1}

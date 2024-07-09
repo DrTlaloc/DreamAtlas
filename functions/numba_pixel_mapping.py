@@ -1,78 +1,82 @@
 # Imports all the DreamAtlas functionality and dependencies
+import numpy as np
+
 from DreamAtlas import *
 
 
 @njit(parallel=True)
-def _jump_flood_algorithm(matrix: np.array,
+def _jump_flood_algorithm(pixel_matrix: np.array,
                           seed_array: np.array,
                           step_size: int,
-                          closest_distance_matrix: np.array,
-                          weight_array: np.array = None,
-                          shape_array: np.array = None,
+                          weight_array: np.array,
+                          shape_array: np.array,
+                          distance_matrix: np.array,
+                          vector_matrix: np.array,
                           hwrap: bool = True,
                           vwrap: bool = True):
-    if weight_array is None:
-        weight_array = np.zeros(len(seed_array))
-        for i in range(len(seed_array)):
-            weight_array[i] = 1
 
-    if shape_array is None:
-        shape_array = np.zeros(len(seed_array))
-        for i in range(len(seed_array)):
-            shape_array[i] = 2
+    shape_x, shape_y = np.shape(pixel_matrix)
 
-    size_shape_factor = np.zeros(len(seed_array), dtype=np.float64)
+    size_shape_factor = np.full(len(seed_array), np.inf, dtype=np.float64)
     for i in range(len(seed_array)):
         size_shape_factor[i] = np.power(weight_array[i], 1 / shape_array[i])
 
     end = False
-    size = matrix.shape
-
-    ping_matrix = matrix
-    pong_matrix = matrix
-
+    ping_matrix = pixel_matrix
+    pong_matrix = pixel_matrix
+    ping_distance_matrix = distance_matrix
+    pong_distance_matrix = distance_matrix
+    ping_vector_matrix = vector_matrix
+    pong_vector_matrix = vector_matrix
     while True:
         step_size = int(0.5 + step_size / 2)
         neighbours = np.array([[step_size, -step_size], [step_size, 0], [step_size, step_size], [0, step_size],
                                [-step_size, step_size], [0, -step_size], [-step_size, -step_size], [-step_size, 0]],
                               dtype=np.int32)
 
-        for x in prange(size[0]):
-            for y in range(size[1]):
+        for x in prange(shape_x):
+            for y in range(shape_y):
                 p = ping_matrix[x, y]
                 for n in range(len(neighbours)):
-                    qx = x + neighbours[n][0]
-                    qy = y + neighbours[n][1]
-                    ix = qx % size[0]
-                    iy = qy % size[1]
+                    neighbour = neighbours[n]
+                    qx = x + neighbour[0]  # Finds the virtual pixel location (can be outside the matrix)
+                    qy = y + neighbour[1]
+
+                    if not hwrap:  # Ensuring the wraparound is respected, if there is no wrapping do not use virtual
+                        qx %= shape_x
+                    if not vwrap:
+                        qy %= shape_y
+
+                    ix = qx % shape_x  # Finds the actual real pixel location (inside the matrix)
+                    iy = qy % shape_y
                     q = ping_matrix[ix, iy]
 
-                    # Main logic of the Jump Flood Algorithm
-                    if p == q:
-                        pass
-                    elif p == 0 and q != 0:
-                        closest_distance_matrix[x, y] = np.linalg.norm(
-                            np.multiply(size_shape_factor[q], np.array([x - qx, y - qy]) +
-                                        np.array([ix - seed_array[q, 0], iy - seed_array[q, 1]])), ord=shape_array[q])
-
+                    # Main logic of the Jump Flood Algorithm (if the pixels are identical or q has no info go to next)
+                    if p == q or q == 0:
+                        continue
+                    q_vector = np.subtract(ping_vector_matrix[ix, iy], neighbour)
+                    q_dist = np.linalg.norm(np.multiply(size_shape_factor[q], q_vector), ord=shape_array[q])
+                    if p == 0:  # if our pixel is empty, populate it with q
+                        pong_distance_matrix[x, y] = q_dist
+                        pong_vector_matrix[x, y] = q_vector
                         pong_matrix[x, y] = q
-                    else:
-                        q_dist = np.linalg.norm(
-                            np.multiply(size_shape_factor[q], np.array([x - qx, y - qy]) +
-                                        np.array([ix - seed_array[q, 0], iy - seed_array[q, 1]])), ord=shape_array[q])
-                        if closest_distance_matrix[x, y] > q_dist:
-                            closest_distance_matrix[x, y] = q_dist
+                    else:  # if our pixel is not empty, see if q is closer than p and if so populate it with q
+                        if ping_distance_matrix[x, y] > q_dist:
+                            pong_distance_matrix[x, y] = q_dist
+                            pong_vector_matrix[x, y] = q_vector
                             pong_matrix[x, y] = q
 
         ping_matrix = pong_matrix
+        ping_distance_matrix = pong_distance_matrix
+        ping_vector_matrix = pong_vector_matrix
 
         if end and step_size == 1:  # Breaking the while loop
             break
         if step_size == 1:  # Does a final pass
-            step_size = 64
+            step_size = 16
             end = True
 
-    return ping_matrix
+    return ping_matrix, ping_distance_matrix, ping_vector_matrix
 
 
 def find_pixel_ownership(coordinates_dict: dict,
@@ -91,8 +95,11 @@ def find_pixel_ownership(coordinates_dict: dict,
     small_matrix = np.zeros((small_x_size, small_y_size), dtype=np.int32)
     dict_size = max(coordinates_dict) + 1
     small_seed_array = np.empty((dict_size, 2), dtype=np.int32)
+
     weight_array = np.ones(dict_size, dtype=np.float64)
-    shape_array = np.ones(dict_size, dtype=np.float64)
+    shape_array = np.full(dict_size, 2, dtype=np.float64)
+    s_distance_matrix = np.full((small_x_size, small_y_size), np.inf, dtype=np.float64)
+    s_vector_matrix = np.zeros((small_x_size, small_y_size, 2), dtype=np.int32)
     for point in coordinates_dict:
         x, y = coordinates_dict[point]
         x_small = int((x / scale_down) % small_x_size)
@@ -102,20 +109,23 @@ def find_pixel_ownership(coordinates_dict: dict,
         weight_array[point] = weights[point]
         shape_array[point] = shapes[point]
 
-    small_distance_matrix = np.multiply(1000, np.ones((small_x_size, small_y_size), dtype=np.float64))
-    small_output_matrix = _jump_flood_algorithm(small_matrix,
-                                                small_seed_array,
-                                                step_size=2 ** (int(2 + np.log(max(map_size) / scale_down))),
-                                                closest_distance_matrix=small_distance_matrix,
-                                                weight_array=weight_array,
-                                                shape_array=shape_array)
+    small_output_matrix, small_distance_matrix, small_vector_matrix = _jump_flood_algorithm(small_matrix,
+                                                                                            small_seed_array,
+                                                                                            step_size=2 ** (int(1 + np.log(max(map_size) / scale_down))),
+                                                                                            weight_array=weight_array,
+                                                                                            shape_array=shape_array,
+                                                                                            distance_matrix=s_distance_matrix,
+                                                                                            vector_matrix=s_vector_matrix,
+                                                                                            hwrap=hwrap,
+                                                                                            vwrap=vwrap)
 
     # Scale the matrix back up and run a JFA again to refine
     zoom = map_size[0] / small_output_matrix.shape[0]
-    final_matrix = sc.ndimage.zoom(small_output_matrix, zoom=zoom, order=0)
-    final_matrix = final_matrix[:map_size[0], :map_size[1]]
-    final_matrix = final_matrix.astype(np.int32)
-    final_distance_matrix = np.multiply(2000, np.ones((final_matrix.shape[0], final_matrix.shape[1]), dtype=np.float64))
+    final_matrix = sc.ndimage.zoom(small_output_matrix, zoom=zoom, order=0, output=np.int32)[:map_size[0], :map_size[1]]
+    final_distance_matrix = np.multiply(small_distance_matrix, scale_down)
+    final_distance_matrix = sc.ndimage.zoom(final_distance_matrix, zoom=zoom, order=0, output=np.float64)[:map_size[0], :map_size[1]]
+    final_vector_matrix = np.multiply(small_vector_matrix, scale_down)
+    final_vector_matrix = sc.ndimage.zoom(final_vector_matrix, zoom=[zoom, zoom, 1], order=0, output=np.int32)[:map_size[0], :map_size[1]]
 
     final_seed_array = np.empty((dict_size, 2), dtype=np.int32)
     for point in coordinates_dict:
@@ -125,12 +135,16 @@ def find_pixel_ownership(coordinates_dict: dict,
         final_seed_array[point] = [x_final, y_final]
         final_matrix[x_final, y_final] = point
 
-    step_size = 2 ** (int(2 + np.log(max(map_size))))
+    final_matrix, _, __ = _jump_flood_algorithm(final_matrix, final_seed_array,
+                                                step_size=2 ** (int(np.log(max(map_size)))),
+                                                weight_array=weight_array,
+                                                shape_array=shape_array,
+                                                distance_matrix=final_distance_matrix,
+                                                vector_matrix=final_vector_matrix,
+                                                hwrap=hwrap,
+                                                vwrap=vwrap)
 
-    return _jump_flood_algorithm(final_matrix, final_seed_array, step_size=step_size,
-                                 closest_distance_matrix=final_distance_matrix,
-                                 weight_array=weight_array,
-                                 shape_array=shape_array)
+    return final_matrix
 
 
 # def pb_pixel_allocation(pixel_matrix):

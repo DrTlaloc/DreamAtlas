@@ -291,6 +291,7 @@ class DominionsMap:
         with open(filepath, "wb") as f:  # Format is little endian binary which requires data to be converted
 
             # Write headline map data
+            print(self.min_dist[plane])
             f.write(struct.pack("<iiiiqhii", 898933, 3, int(self.map_size[plane][0]), int(self.map_size[plane][1]), 0,
                                 int((self.min_dist[plane] % 1.0) * 10000), int(self.min_dist[plane]), int(len(self.province_list[plane]))))
 
