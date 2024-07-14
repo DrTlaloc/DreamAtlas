@@ -106,6 +106,7 @@ def find_pixel_ownership(coordinates_dict: dict,
         y_small = int((y / scale_down) % small_y_size)
         small_seed_array[point] = [x_small, y_small]
         small_matrix[x_small, y_small] = point
+        s_distance_matrix[x_small, y_small] = 0
         weight_array[point] = weights[point]
         shape_array[point] = shapes[point]
 

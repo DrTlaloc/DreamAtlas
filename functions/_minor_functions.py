@@ -24,12 +24,11 @@ def find_shape_size(province, settings):  # Function for calculating the size of
         size *= settings.water_province_size
     if terrain_int & 4096:  # cave
         size *= settings.cave_province_size
-
-    # size - population
-    size *= 2 / (1 + np.e ** (0.01 * (province.population / 10000 - 1)))
+    size *= 2 / (1 + np.e ** (0.01 * (province.population / 10000 - 1)))  # size - population
 
     # shape
-    shape = 2
+    for terrain in terrain_list:
+        shape *= TERRAIN_2_SHAPES_DICT[terrain]
 
     return size, shape
 

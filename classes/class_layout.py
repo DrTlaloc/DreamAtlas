@@ -4,7 +4,6 @@ from . import *
 def make_delaunay_graph(province_list: list[Province, ...],
                         map_size: tuple[int, int],
                         wraparound: tuple[bool, bool] = (True, True)):
-
     graph = {}
     coordinates = {}
     darts = {}
@@ -49,7 +48,8 @@ def make_delaunay_graph(province_list: list[Province, ...],
 
             i_coord = tri.points[p1]
             j_coord = tri.points[p2]
-            if (0 <= i_coord[0] < map_size[0]) and (0 <= i_coord[1] < map_size[1]):  # only do this for nodes in the graph
+            if (0 <= i_coord[0] < map_size[0]) and (
+                    0 <= i_coord[1] < map_size[1]):  # only do this for nodes in the graph
                 done_edges.append([index2, index1])
                 graph[index1].append(index2)
                 graph[index2].append(index1)
@@ -88,8 +88,10 @@ class DominionsLayout:
         self.coordinates = [{} for _ in range(10)]
         self.darts = [{} for _ in range(10)]
         self.edge_types = [[] for _ in range(10)]
+        self.neighbours = [[] for _ in range(10)]
         self.special_neighbours = [[] for _ in range(10)]
         self.gates = [[] for _ in range(10)]
+        self.min_dist = [np.Inf for _ in range(10)]
 
     def generate_region_layout(self,
                                seed: int = None):
@@ -107,7 +109,8 @@ class DominionsLayout:
         weights = {}
         for i in graph:
             weights[i] = 1
-        graph, coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, map_size, ratios=(0.3, 2), iterations=200)
+        graph, coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, map_size,
+                                                               ratios=(0.5, 2), iterations=500)
 
         # Now add periphery regions in between the players
         done_edges = {(0, 0)}
@@ -190,13 +193,15 @@ class DominionsLayout:
             lloyd_points[index] = province_list[index].coordinates
         lloyd = LloydRelaxation(lloyd_points)
         lloyd.relax()
-        # lloyd.relax()
+        lloyd.relax()
+        lloyd.relax()
         lloyd_points = lloyd.get_points()
         for index in range(len(province_list)):
             province_list[index].coordinates = lloyd_points[index]
 
         graph, coordinates, darts = make_delaunay_graph(province_list, map_size)
-        graph, coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, map_size, ratios=(0.5, 0.001), iterations=200)
+        graph, coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, map_size,
+                                                               ratios=(0.8, 0.05), iterations=1000)
 
         for province in province_list:
             province.coordinates = coordinates[province.index]
@@ -205,53 +210,68 @@ class DominionsLayout:
         self.coordinates[plane] = coordinates
         self.darts[plane] = darts
 
-    def generate_special_neighbours_gates(self,
-                                          plane: int,
-                                          seed: int = None):
-        dibber(self, seed)  # Setting random seed
-
-        province_list = self.map.province_list[plane]
-        map_size = self.map.map_size[plane]
-        graph = self.graph[plane]
-        coordinates = self.coordinates[plane]
-        darts = self.darts[plane]
-
-        special_neighbours = []
-        gates = []
-
-        for province in province_list:
-            index = province.index
-            # for j in graph[index]:
-            #     province =
-            gates.append([index, 1])
-
-        self.special_neighbours[plane] = special_neighbours
-        self.gates[plane] = gates
-
-    def get_neighbour_lists(self,
+    def generate_neighbours(self,
                             plane: int):
 
-        map_size = self.map.map_size[plane]
-        graph = self.graph[plane]
-        coordinates = self.coordinates[plane]
-        darts = self.darts[plane]
-        special_neighbours = self.special_neighbours[plane]
-        gates = self.gates[plane]
-        done_edges = []
-        neighbour_list = []
+        done_provinces = {0}
+        self.neighbours[plane] = []
+        self.min_dist[plane] = np.Inf
 
-        min_dist = np.Inf
-        for i in graph:  # Assigning all graph edges as neighbours
-            for j in graph[i]:
-                if [i, j] not in done_edges:
-                    done_edges.append([j, i])
-                    neighbour_list.append([i, j])
+        for i in self.graph[plane]:  # Assigning all graph edges as neighbours
+            done_provinces.add(i)
+            for j in self.graph[plane][i]:
+                if j not in done_provinces:
+                    self.neighbours[plane].append([i, j])
+                    dist = np.linalg.norm(
+                        self.coordinates[plane][j] + np.multiply(self.darts[plane][i][self.graph[plane][i].index(j)],
+                                                                 self.map.map_size[plane]) - self.coordinates[plane][i])
+                    if dist < self.min_dist[plane]:
+                        self.min_dist[plane] = dist
 
-                    dist = np.linalg.norm(coordinates[j] + np.multiply(darts[i][graph[i].index(j)], map_size) - coordinates[i])
-                    if dist < min_dist:
-                        min_dist = dist
+    def generate_special_neighbours(self,
+                                    plane: int,
+                                    seed: int = None):
+        dibber(self, seed)  # Setting random seed
 
-        return neighbour_list, special_neighbours, gates, min_dist
+        if not self.neighbours[plane]:
+            return Exception('No neighbours')
+        self.special_neighbours[plane] = []
+        index_2_prov = {}
+        for province in self.map.province_list[plane]:
+            index_2_prov[province.index] = province
+
+        for i, j in self.neighbours[plane]:  # Randomly assigns special connections (will be improved in v1.1)
+            i_j_provs = [index_2_prov[i], index_2_prov[j]]
+            choice = int(rd.choices(SPECIAL_NEIGHBOUR, NEIGHBOUR_SPECIAL_WEIGHTS)[0][0])
+            if choice != 0:
+                for index in range(2):
+                    if i_j_provs[index].capital_location:  # Ignore caps
+                        break
+                    elif i_j_provs[index].terrain_int & 4 == 4:  # Ignore UW
+                        break
+                    elif i_j_provs[index].terrain_int & 4096 == 4096:  # Ignore cave
+                        break
+                    elif i_j_provs[index].terrain_int & 68719476736 == 68719476736:  # if cave wall
+                        self.special_neighbours[plane].append([i, j, 4])
+                        break
+                    else:
+                        if (choice == 1 or choice == 4) and not (i_j_provs[index].terrain_int & 8388608 == 8388608):
+                            i_j_provs[index].terrain_int += 8388608
+                        self.special_neighbours[plane].append([i, j, choice])
+
+    def generate_gates(self,
+                       seed: int = None):
+        dibber(self, seed)  # Setting random seed
+
+        # index_2_prov = {}
+        #
+        # for plane in range(10):
+        #     if not self.map.province_list[plane]:
+        #         for province in self.map.province_list[plane]:
+        #             index_2_prov[province.index] = province
+        #             index_2_region[province.index] = province.parent_region
+        #
+        # self.gates = 1
 
     # def plot(self, graph, coordinates, ax=None, real_size=None):
     #

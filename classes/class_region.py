@@ -117,6 +117,8 @@ class Region:
                 province.terrain_int = self.nations[0].cap_terrain
             elif index <= self.anchor_connections:  # cap circle
                 province.terrain_int = rd.choices(TERRAIN_PREF_BITS, weights=self.terrain_pref, k=1)[0]
+                if province.plane == 2:
+                    province.terrain_int += 4096
                 if not self.is_throne:
                     if index / self.anchor_connections > self.layout[0]:  # land/sea
                         province.terrain_int += 4

@@ -291,13 +291,12 @@ class DominionsMap:
         with open(filepath, "wb") as f:  # Format is little endian binary which requires data to be converted
 
             # Write headline map data
-            print(self.min_dist[plane])
             f.write(struct.pack("<iiiiqhii", 898933, 3, int(self.map_size[plane][0]), int(self.map_size[plane][1]), 0,
                                 int((self.min_dist[plane] % 1.0) * 10000), int(self.min_dist[plane]), int(len(self.province_list[plane]))))
 
             for province in self.province_list[plane]:  # Write pixel positions of each 'capital' (fort) and the 'spec' (if its deep sea, unknown why this is)
                 x, y = province.coordinates
-                f.write(struct.pack("<hhq", int(x), int(y), province.terrain_int & 2052))
+                f.write(struct.pack("<hhq", int(x), int(y), province.terrain_int & 2052 == 2052))
 
             for height in np.ndarray.flatten(self.height_map[plane], order='F'):  # Write height for each pixel
                 f.write(struct.pack("<h", int(height)))

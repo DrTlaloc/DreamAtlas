@@ -49,13 +49,12 @@ def _numba_spring_electron_adjustment(key_list: np.array,
                 if graph[i, j] == 1:
                     spring_vector = coordinates[j] + darts[i, j] * map_size_array - coordinates[i]
                     unit_vector = spring_vector / (0.001 + np.linalg.norm(spring_vector))
-                    spring_force = spring_force + spring_coefficient * (spring_vector - 50 * unit_vector) / \
-                                   weight_array[j]
+                    spring_force = spring_force + spring_coefficient * (spring_vector - 50 * unit_vector * weight_array[j])
 
             velocity[i] = damping_ratio * (velocity[i] + electron_force + spring_force)
 
         for i in range(dict_size):  # Check if non-fixed particles are within tolerance
-            if np.linalg.norm(velocity[i]) > 0.5:
+            if np.linalg.norm(velocity[i]) > 0.01:
                 break
             if i == dict_size - 1:
                 equilibrium = True
@@ -63,8 +62,7 @@ def _numba_spring_electron_adjustment(key_list: np.array,
         for i in range(dict_size):  # Update the position
             coordinates[i] = coordinates[i] + velocity[i]
 
-            if not ((0 <= coordinates[i, 0] < map_size_array[0]) and (
-                    0 <= coordinates[i, 1] < map_size_array[1])):  # Checking torus constraints
+            if not ((0 <= coordinates[i, 0] < map_size_array[0]) and (0 <= coordinates[i, 1] < map_size_array[1])):  # Checking torus constraints
                 for axis in range(2):
                     if not (0 <= coordinates[i, axis] < map_size_array[axis]):
                         dart_change = -np.sign(coordinates[i, axis])
@@ -117,9 +115,7 @@ def spring_electron_adjustment(graph: dict,
             index2 += 1
         index += 1
 
-    _coordinates, _darts = _numba_spring_electron_adjustment(key_list, graph_array, coordinates_array, darts_array,
-                                                             weight_array, [map_size[0], map_size[1]], ratios, iterations)
-
+    _coordinates, _darts = _numba_spring_electron_adjustment(key_list, graph_array, coordinates_array, darts_array, weight_array, [map_size[0], map_size[1]], ratios, iterations)
     graph_output = {}
     coordinates_output = {}
     darts_output = {}

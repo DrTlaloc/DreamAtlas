@@ -7,15 +7,15 @@ from . import *
 ########################################################################################################################
 
 # Terrain preference vector is the weighting for each type of terrain
-TERRAIN_PREF_BITS = [0, 16, 32, 64, 128, 256, 8388608]
-TERRAIN_PREFERENCES = [         # TERRAIN_PREF_XXXX = [plains, highlands, swamp, waste, forest, farm, mountains]
-    [5, 1, 1, 1, 2, 1, 1],      # Balanced
-    [10, 1, 1, 1, 1, 1, 1],     # Plains
-    [5, 1, 1, 1, 5, 1, 1],      # Forest
-    [3, 3, 1, 1, 3, 1, 4],      # Mountains
-    [3, 1, 0.5, 3, 1, 0.5, 1],  # Desert
-    [3, 1, 3, 0.5, 2, 1, 1],    # Swamp
-    [5, 1, 1, 1, 2, 1, 1]       # Karst
+TERRAIN_PREF_BITS = [0, 16, 32, 64, 128, 256]
+TERRAIN_PREFERENCES = [         # TERRAIN_PREF_XXXX = [plains, highlands, swamp, waste, forest, farm]
+    [5, 1, 1, 1, 2, 1],      # Balanced
+    [10, 1, 1, 1, 1, 1],     # Plains
+    [5, 1, 1, 1, 5, 1],      # Forest
+    [3, 4, 1, 1, 2, 1],      # Mountains
+    [3, 1, 0.5, 3, 1, 0.5],  # Desert
+    [3, 1, 3, 0.5, 2, 1],    # Swamp
+    [5, 1, 1, 1, 2, 1]       # Karst
 ]
 TERRAIN_PREF_BALANCED, TERRAIN_PREF_PLAINS, TERRAIN_PREF_FOREST, TERRAIN_PREF_MOUNTAINS, TERRAIN_PREF_DESERT, TERRAIN_PREF_SWAMP, TERRAIN_PREF_KARST = TERRAIN_PREFERENCES
 
@@ -25,14 +25,14 @@ LAYOUT_PREFERENCES = [  # LAYOUT_PREF_XXXX = [cap circle split, rest of homeland
     [1.0, 0.85],        # Cave
     [0.8, 0.8],         # Coast
     [0.2, 0.8],         # Island
-    [0, 0.6],           # Deeps
+    [0.0, 0.6],         # Deeps
     [0.2, 0.6],         # Shallows
-    [0, 0.5]            # Lakes
+    [0.0, 0.5]          # Lakes
 ]
 LAYOUT_PREF_LAND, LAYOUT_PREF_CAVE, LAYOUT_PREF_COAST, LAYOUT_PREF_ISLAND, LAYOUT_PREF_DEEPS, LAYOUT_PREF_SHALLOWS, LAYOUT_PREF_LAKES = LAYOUT_PREFERENCES
 
-TERRAIN_2_HEIGHTS_DICT = {0: 0, 4: -600, 16: 200, 32: 50, 64: 300, 128: 90, 256: 250, 2048: -200, 4096: 1000, 8388608: 200, 68719476736: -1000}
-TERRAIN_2_SHAPES_DICT = {}
+TERRAIN_2_HEIGHTS_DICT = {0: 0, 4: -600, 16: 200, 32: 50, 64: 300, 128: 90, 256: 250, 2048: -200, 4096: 1000, 8388608: 500, 68719476736: 1}
+TERRAIN_2_SHAPES_DICT = {0: 1, 4: 2, 8: 0.7, 16: 0.7, 32: 0.5, 64: 2, 128: 2, 256: 0.5, 2048: 2, 4096: 0.7, 8388608: 1, 68719476736: 1}
 
 # Homelands format: [Nation index, terrain preference, layout preference, capital terrain int, plane]
 HOMELANDS_INFO = [
@@ -165,6 +165,9 @@ PERIPHERY_INFO = [
     [TERRAIN_PREF_BALANCED, LAYOUT_PREF_COAST],     # 10 DELTA
     [TERRAIN_PREF_KARST, LAYOUT_PREF_DEEPS]         # 11 UNDERSEA
 ]
+
+# Connections settings [Standard border, Mountain pass, River border, 'Impassable', 'Road']
+NEIGHBOUR_SPECIAL_WEIGHTS = [0.8, 0.05, 0.05, 0.05, 0.05]
 
 # UNIVERSAL FUNCTIONS AND VARIABLES
 ########################################################################################################################

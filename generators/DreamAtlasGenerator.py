@@ -55,7 +55,6 @@ def DreamAtlasGenerator(settings, seed=None):
         for province in new_homeland.provinces:
             province.index = province_index[province.plane]
             province_list[province.plane].append(province)
-            terrain_list[province.plane].append([province.index, province.terrain_int])
             province_index[province.plane] += 1
 
         homeland_list.append(new_homeland)
@@ -85,7 +84,6 @@ def DreamAtlasGenerator(settings, seed=None):
         for province in new_periphery.provinces:
             province.index = province_index[province.plane]
             province_list[province.plane].append(province)
-            terrain_list[province.plane].append([province.index, province.terrain_int])
             province_index[province.plane] += 1
 
         fixed_points.add(new_periphery.provinces[0].index)
@@ -108,7 +106,6 @@ def DreamAtlasGenerator(settings, seed=None):
         for province in new_throne.provinces:
             province.index = province_index[province.plane]
             province_list[1].append(province)
-            terrain_list[1].append([province.index, province.terrain_int])
             province_index[province.plane] += 1
 
         region_index += 1
@@ -123,7 +120,6 @@ def DreamAtlasGenerator(settings, seed=None):
             province_index[2] += 1
             new_wall.parent_region = -1
             province_list[2].append(new_wall)
-            terrain_list[2].append([new_wall.index, new_wall.terrain_int])
 
     map_class.homeland_list = homeland_list
     map_class.allowed_nations_list = allowed_nations_list
@@ -136,8 +132,17 @@ def DreamAtlasGenerator(settings, seed=None):
     print('\nMap assembly....')
     for plane in map_class.planes:
         layout.generate_province_layout(plane=plane)
-        layout.generate_special_neighbours_gates(plane=plane)
-        map_class.neighbour_list[plane], map_class.special_neighbour_list[plane], map_class.gate_list[plane], map_class.min_dist[plane] = layout.get_neighbour_lists(plane=plane)
+        layout.generate_neighbours(plane=plane)
+        layout.generate_special_neighbours(plane=plane)
+
+        for province in province_list[plane]:  # Do this here in case of terrain changes from mountains (curse Illwinter)
+            terrain_list[plane].append([province.index, province.terrain_int])
+    layout.generate_gates()
+
+    map_class.neighbour_list = layout.neighbours
+    map_class.min_dist = layout.min_dist
+    map_class.special_neighbour_list = layout.special_neighbours
+    map_class.gate_list = layout.gates
 
     ########################################################################################################################
     # Do pixel mapping
