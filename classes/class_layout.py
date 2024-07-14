@@ -244,20 +244,21 @@ class DominionsLayout:
             i_j_provs = [index_2_prov[i], index_2_prov[j]]
             choice = int(rd.choices(SPECIAL_NEIGHBOUR, NEIGHBOUR_SPECIAL_WEIGHTS)[0][0])
             if choice != 0:
+                fail = False
                 for index in range(2):
                     if i_j_provs[index].capital_location:  # Ignore caps
-                        break
+                        fail = True
                     elif i_j_provs[index].terrain_int & 4 == 4:  # Ignore UW
-                        break
+                        fail = True
                     elif i_j_provs[index].terrain_int & 4096 == 4096:  # Ignore cave
-                        break
+                        fail = True
                     elif i_j_provs[index].terrain_int & 68719476736 == 68719476736:  # if cave wall
                         self.special_neighbours[plane].append([i, j, 4])
-                        break
-                    else:
-                        if (choice == 1 or choice == 4) and not (i_j_provs[index].terrain_int & 8388608 == 8388608):
-                            i_j_provs[index].terrain_int += 8388608
-                        self.special_neighbours[plane].append([i, j, choice])
+                        fail = True
+                    elif (choice == 1 or choice == 4) and not (i_j_provs[index].terrain_int & 8388608 == 8388608):
+                        i_j_provs[index].terrain_int += 8388608
+                if not fail:
+                    self.special_neighbours[plane].append([i, j, choice])
 
     def generate_gates(self,
                        seed: int = None):

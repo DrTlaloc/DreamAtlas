@@ -143,11 +143,6 @@ HOMELANDS_INFO = [
     [125, TERRAIN_PREF_BALANCED, LAYOUT_PREF_COAST, 0, 1],          # Erytheia
     [126, TERRAIN_PREF_BALANCED, LAYOUT_PREF_COAST, 0, 1],          # Atlantis
     [127, TERRAIN_PREF_BALANCED, LAYOUT_PREF_DEEPS, 2052, 1],       # Ryleh
-
-    # PLACEHOLDER NATIONS
-    [300, TERRAIN_PREF_BALANCED, LAYOUT_PREF_DEEPS, 0, 1],
-    [400, TERRAIN_PREF_BALANCED, LAYOUT_PREF_DEEPS, 0, 1],
-    [500, TERRAIN_PREF_BALANCED, LAYOUT_PREF_DEEPS, 0, 1]
 ]
 
 # Periphery settings
@@ -166,8 +161,9 @@ PERIPHERY_INFO = [
     [TERRAIN_PREF_KARST, LAYOUT_PREF_DEEPS]         # 11 UNDERSEA
 ]
 
-# Connections settings [Standard border, Mountain pass, River border, 'Impassable', 'Road']
-NEIGHBOUR_SPECIAL_WEIGHTS = [0.8, 0.05, 0.05, 0.05, 0.05]
+# Connections settings [Standard border, Mountain pass, River border, Impassable, Road, River bridge, Impassable mountain]
+NEIGHBOUR_SPECIAL_WEIGHTS = [0.8, 0.05, 0.05, 0, 0.05, 0.05, 0.05]
+# check 33,
 
 # UNIVERSAL FUNCTIONS AND VARIABLES
 ########################################################################################################################
