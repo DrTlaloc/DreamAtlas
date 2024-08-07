@@ -98,77 +98,99 @@ class DominionsLayout:
         dibber(self, seed)  # Setting random seed
 
         map_size = self.map.map_size[1]
-        nation_list = self.map.settings.nations
-        player_neighbours = self.map.settings.player_neighbours
 
         # Select a player layout and build the basic graph
-        graph = rd.choice(DATASET_GRAPHS[len(nation_list)][player_neighbours])
-        ntx_graph = ntx.Graph(incoming_graph_data=graph)
-        graph, coordinates, darts, _ = minor_graph_embedding(ntx_graph, map_size, 0.01)
+        graph = rd.choice(DATASET_GRAPHS[len(self.map.settings.nations)+len(self.map.settings.custom_nations)][self.map.settings.player_neighbours])
 
-        weights = {}
-        for i in graph:
-            weights[i] = 1
-        graph, coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, map_size,
-                                                               ratios=(0.5, 2), iterations=500)
+        print(graph)
 
         # Now add periphery regions in between the players
-        done_edges = {(0, 0)}
-        rotation = {}
-        p = len(graph)
-        for i in range(1, 1 + len(nation_list)):
+        done_edges, rotation, p = set(), dict(), len(graph)
+        for i in range(1, 1 + len(graph)):
             for connection in range(len(graph[i])):
                 j = graph[i][connection]
-                edge = (i, j)
-                if edge not in done_edges:
+                if (i, j) not in done_edges:
                     p += 1
                     done_edges.add((p, i))
                     done_edges.add((j, p))
-
-                    # Finding where the peripheral should be
-                    i_j_vector = np.subtract(coordinates[j] + np.multiply(darts[i][connection], map_size),
-                                             coordinates[i])
-                    p_coords = coordinates[i] + 0.5 * i_j_vector
-                    pi_dart = [0, 0]
-                    pj_dart = [0, 0]
-
-                    for axis in range(2):
-                        if darts[i][connection][axis] == 1:
-                            if p_coords[axis] < map_size[axis]:  # 1 s
-                                pi_dart[axis] = 0
-                                pj_dart[axis] = -1
-                            else:  # 1 o
-                                pi_dart[axis] = 1
-                                pj_dart[axis] = 0
-                        elif darts[i][connection][axis] == 1:
-                            if p_coords[axis] >= 0:  # -1 s
-                                pi_dart[axis] = 0
-                                pj_dart[axis] = 1
-                            else:  # -1 o
-                                pi_dart[axis] = -1
-                                pj_dart[axis] = 0
-
-                    # Adding the periphery to the dicts
-                    graph[p] = [i, j]
-                    coordinates[p] = np.mod(p_coords, map_size)
-                    darts[p] = [[pi_dart], [pj_dart]]
-                    rotation[p] = 90 - np.angle([i_j_vector[0] + i_j_vector[1] * 1j], deg=True)
-
-                    # Modifying the existing connections/darts
-                    graph[i][connection] = p
-                    darts[i][connection] = np.negative(pi_dart)
+                    graph[p] = [i, j]  # Adding the periphery to the dicts
+                    graph[i][connection] = p  # Modifying the existing connections/darts
+                    rotation[p] = 0
                     for o in range(len(graph[j])):
                         if graph[j][o] == i:
                             graph[j][o] = p
-                            darts[j][o] = np.negative(pj_dart)
 
-        # Finally add thrones between peripheries with shared spaces
-        t = len(graph)
-        for i in range(self.map.settings.throne_count):  # Adding the throne to the dicts
+        coordinates, darts, _, __ = embed_region_graph(graph, map_size, 0.01, seed)
+
+        print(graph, 'working1')
+
+        weights = dict()
+        for i in graph:
+            weights[i] = 1
+        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, [0], map_size, ratios=(0.5, 0.05, 10), iterations=1000)  # final pass to clean up the embedding
+
+        print(graph, 'working2')
+
+        edges_set, embedding = set(), dict()
+        for i in graph:  # edges_set is an undirected graph as a set of undirected edges
+            j_angles = []
+            for j in graph[i]:
+                edges_set |= {(i, j), (j, i)}
+                vector = coordinates[j] + np.multiply(darts[i][graph[i].index(j)], map_size) - coordinates[i]
+                angle = 90-np.angle(vector[0] + vector[1] * 1j, deg=True)
+                j_angles.append([j, angle])
+
+            j_angles.sort(key=lambda x: x[1])
+            embedding[i] = [x[0] for x in j_angles]  # Format: v1:[v2,v3], v2:[v1], v3:[v1] clockwise ordering of neighbors at each vertex
+
+        faces, path = list(), list()  # Storage for face paths
+        path.append((i, j))
+        edges_set -= {(i, j)}
+
+        while len(edges_set) > 0:  # Trace faces
+            neighbors = embedding[path[-1][-1]]
+            next_node = neighbors[(neighbors.index(path[-1][-2]) + 1) % (len(neighbors))]
+            tup = (path[-1][-1], next_node)
+            if tup == path[0]:
+                faces.append(path)
+                path = list()
+                for edge in edges_set:
+                    path.append(edge)
+                    edges_set -= {edge}
+                    break  # (Only one iteration)
+            else:
+                path.append(tup)
+                edges_set -= {tup}
+        if len(path) != 0:
+            faces.append(path)
+
+        potential_thrones = list()
+        for face in faces:
+            shift = np.subtract(np.divide(map_size, 2), coordinates[face[0][0]])
+            total = np.zeros(2)
+            for edge in face:
+                i = edge[0]
+                total = total + (np.add(coordinates[i], shift)) % map_size
+            coordinate = (-shift + total / len(face)) % map_size
+            potential_thrones.append((int(coordinate[0]), int(coordinate[1])))
+
+        # Assign these as good throne locations
+        if self.map.settings.throne_sites > len(potential_thrones):
+            return Exception("\033[31m" + "Error: more thrones (%i) than good throne locations (%i)\x1b[0m" % (self.map.settings.throne_sites, len(potential_thrones)))
+        if self.map.settings.throne_sites < len(potential_thrones):
+            print("\033[31m" + "Warning: less thrones (%i) than good throne locations (%i)\x1b[0m" % (self.map.settings.throne_sites, len(potential_thrones)))
+
+        t = len(graph) + 1
+        for coordinate in range(self.map.settings.throne_sites):  # Adding the throne to the dicts
+            coordinate = rd.choice(potential_thrones)
+            potential_thrones.remove(coordinate)
             graph[t] = []
-            coordinates[t] = np.mod(p_coords, map_size)
+            coordinates[t] = [coordinate[0], coordinate[1]]
             darts[t] = []
             rotation[t] = 0
+            t += 1
+
+        print(graph, 'working3')
 
         self.region_graph = graph
         self.region_coordinates = coordinates
@@ -184,24 +206,23 @@ class DominionsLayout:
         province_list = self.map.province_list[plane]
         map_size = self.map.map_size[plane]
 
-        weights = {}
-        for province in self.map.province_list[plane]:
+        weights, fixed_points, lloyd_points, count_2_index = dict(), list(), list(), dict()
+        for index in range(len(province_list)):
+            province = province_list[index]
             weights[province.index] = province.size
+            lloyd_points.append(province_list[index].coordinates)
+            if province.fixed:
+                fixed_points.append(province.index)
 
-        lloyd_points = np.empty((len(province_list), 2))  # lloyd relaxation step
-        for index in range(len(province_list)):
-            lloyd_points[index] = province_list[index].coordinates
-        lloyd = LloydRelaxation(lloyd_points)
-        lloyd.relax()
-        lloyd.relax()
-        lloyd.relax()
+        lloyd = LloydRelaxation(np.array(lloyd_points))
+        for _ in range(3):
+            lloyd.relax()
         lloyd_points = lloyd.get_points()
-        for index in range(len(province_list)):
+        for index in range(len(lloyd_points)):
             province_list[index].coordinates = lloyd_points[index]
 
         graph, coordinates, darts = make_delaunay_graph(province_list, map_size)
-        graph, coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, map_size,
-                                                               ratios=(0.8, 0.05), iterations=1000)
+        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.5, 0.05, 3), iterations=1000)
 
         for province in province_list:
             province.coordinates = coordinates[province.index]
@@ -255,7 +276,7 @@ class DominionsLayout:
                     elif i_j_provs[index].terrain_int & 68719476736 == 68719476736:  # if cave wall
                         self.special_neighbours[plane].append([i, j, 4])
                         fail = True
-                    elif (choice == 1 or choice == 4) and not (i_j_provs[index].terrain_int & 8388608 == 8388608):
+                    elif (choice == 33 or choice == 36) and not (i_j_provs[index].terrain_int & 8388608 == 8388608):
                         i_j_provs[index].terrain_int += 8388608
                 if not fail:
                     self.special_neighbours[plane].append([i, j, choice])
@@ -264,38 +285,79 @@ class DominionsLayout:
                        seed: int = None):
         dibber(self, seed)  # Setting random seed
 
-        # index_2_prov = {}
-        #
-        # for plane in range(10):
-        #     if not self.map.province_list[plane]:
-        #         for province in self.map.province_list[plane]:
-        #             index_2_prov[province.index] = province
-        #             index_2_region[province.index] = province.parent_region
-        #
-        # self.gates = 1
+        self.gates = [[] for _ in range(10)]
+        region_plane_dict = {}
+        region_list = []
+        for plane in range(1, 10):  # sort the provinces into region-plane buckets and remove invalid candidates
+            region_plane_dict[plane] = {}
+            for province in self.map.province_list[plane]:
+                if not province.capital_location:
+                    if province.parent_region not in region_plane_dict[plane]:
+                        region_plane_dict[plane][province.parent_region] = []
+                        if province.parent_region not in region_list:
+                            region_list.append(province.parent_region)
+                    region_plane_dict[plane][province.parent_region].append(province.index)
+        gate = 1
+        for region in region_list:  # randomly gate them
+            planes = []
+            for plane in range(1, 10):
+                try:
+                    thing = len(region_plane_dict[plane][region])
+                except:
+                    continue
+                planes.append(plane)
+            if len(planes) > 1:
+                for link in range(2):
+                    choice1 = rd.choice(region_plane_dict[1][region])
+                    choice2 = rd.choice(region_plane_dict[2][region])
+                    region_plane_dict[1][region].remove(choice1)
+                    region_plane_dict[2][region].remove(choice2)
+                    self.gates[1].append([choice1, gate])
+                    self.gates[2].append([choice2, gate])
+                    gate += 1
 
-    # def plot(self, graph, coordinates, ax=None, real_size=None):
-    #
-    #     if ax is None:
-    #         _ = plt.figure()
-    #         ax = plt.axes()
-    #
-    #     if real_size is None:
-    #         real_size = np.Inf
-    #
-    #     for vertex in range(len(graph)):
-    #         x0, y0 = coordinates[vertex + 1]
-    #         for edge in graph[vertex + 1]:
-    #             x1, y1 = coordinates[edge]
-    #             ax.plot([x0, x1], [y0, y1], 'k-')
-    #
-    #     for vertex in range(len(graph)):
-    #         x0, y0 = coordinates[vertex + 1]
-    #         if vertex > real_size - 1:
-    #             ax.plot(x0, y0, 'go')
-    #             ax.text(x0, y0, str(vertex + 1))
-    #         else:
-    #             ax.plot(x0, y0, 'ro')
-    #             ax.text(x0, y0, str(vertex + 1))
-    #
-    #     ax.set(xlim=(0, 2000), ylim=(0, 1000))
+    def plot(self):
+
+        fig, axs = plt.subplots(1 + len(self.map.planes), 1)
+        ax_regions = axs[0]
+        ax_provinces = axs[1:]
+
+        # Plot regions
+        virtual_graph, virtual_coordinates = make_virtual_graph(self.region_graph, self.region_coordinates, self.region_darts, self.map.map_size[1])
+        for i in virtual_graph:  # region connections
+            x0, y0 = virtual_coordinates[i]
+            for j in virtual_graph[i]:
+                x1, y1 = virtual_coordinates[j]
+                ax_regions.plot([x0, x1], [y0, y1], 'k-')
+
+        for i in self.region_graph:
+            x0, y0 = self.region_coordinates[i]
+            if i <= len(self.map.settings.nations):
+                colour = 'go'
+            elif i <= len(self.region_graph) - self.map.settings.throne_sites:
+                colour = 'ro'
+            else:
+                colour = 'yo'
+            ax_regions.plot(x0, y0, colour)
+            ax_regions.text(x0, y0, str(i))
+        ax_regions.set(xlim=(0, self.map.map_size[1][0]), ylim=(0, self.map.map_size[1][1]))
+
+        # Plot provinces
+        for index in range(len(self.map.planes)):
+            plane = self.map.planes[index]
+            ax = ax_provinces[index]
+            virtual_graph, virtual_coordinates = make_virtual_graph(self.graph[plane], self.coordinates[plane], self.darts[plane], self.map.map_size[plane])
+            for i in virtual_graph:  # region connections
+                x0, y0 = virtual_coordinates[i]
+                for j in virtual_graph[i]:
+                    x1, y1 = virtual_coordinates[j]
+                    ax.plot([x0, x1], [y0, y1], 'k-')
+
+            for i in self.graph[plane]:
+                x0, y0 = self.coordinates[plane][i]
+                ax.plot(x0, y0, 'ro')
+                ax.text(x0, y0, str(i))
+            ax.set(xlim=(0, self.map.map_size[plane][0]), ylim=(0, self.map.map_size[plane][1]))
+
+
+

@@ -1,6 +1,4 @@
 # Imports all the DreamAtlas functionality and dependencies
-import numpy as np
-
 from DreamAtlas import *
 
 

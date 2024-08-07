@@ -27,8 +27,9 @@ def find_shape_size(province, settings):  # Function for calculating the size of
     size *= 2 / (1 + np.e ** (0.01 * (province.population / 10000 - 1)))  # size - population
 
     # shape
-    for terrain in terrain_list:
-        shape *= TERRAIN_2_SHAPES_DICT[terrain]
+    for terrain in TERRAIN_2_SHAPES_DICT:
+        if terrain in terrain_list:
+            shape *= TERRAIN_2_SHAPES_DICT[terrain]
 
     return size, shape
 

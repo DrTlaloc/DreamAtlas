@@ -1,12 +1,13 @@
 from DreamAtlas import *
 
 
-def minor_graph_embedding(source_graph: dict,
-                          map_size: tuple[int, int],
-                          scale_down: int,
-                          seed: int = None):
+def embed_region_graph(graph: dict,
+                       map_size: tuple[int, int],
+                       scale_down: float,
+                       seed: int):
+    rd.seed(seed)
 
-    graph_range = range(len(source_graph))
+    graph_range = range(1, 1 + len(graph))
 
     # Set the graph size to embed (smaller is faster)
     x_size = int(scale_down * map_size[0])
@@ -14,151 +15,170 @@ def minor_graph_embedding(source_graph: dict,
     connections = [[1, 0], [0, 1], [0, -1], [-1, 0]]
 
     # Make the H graph
-    target_graph = {}
+    target_graph = dict()
     for x in range(x_size):
         for y in range(y_size):
-            target_graph[(x / scale_down, y / scale_down)] = []
-            # add each 4 connections including the wraparound
+            target_graph[(int(x / scale_down), int(y / scale_down))] = list()
             for connection in connections:
-                x_coord = x + connection[0]
-                if x_coord < 0:
-                    x_coord = x_size - 1
-                elif x_coord >= x_size:
-                    x_coord = 0
-
-                y_coord = y + connection[1]
-                if y_coord < 0:
-                    y_coord = y_size - 1
-                elif y_coord >= y_size:
-                    y_coord = 0
-
-                target_graph[(x / scale_down, y / scale_down)].append((x_coord / scale_down, y_coord / scale_down))
+                x_coord = int(((x + connection[0]) % x_size) / scale_down)
+                y_coord = int(((y + connection[1]) % y_size) / scale_down)
+                target_graph[(int(x / scale_down), int(y / scale_down))].append((x_coord, y_coord))
 
     target_graph = ntx.Graph(incoming_graph_data=target_graph)
-    initial_embedding, worked = mnm.find_embedding(source_graph, target_graph, return_overlap=True)
+    initial_embedding, worked = mnm.find_embedding(ntx.Graph(incoming_graph_data=graph), target_graph, return_overlap=True, random_seed=seed)
 
     # Form the subgraph of the target graph
-    subgraph_nodes = []
-    embedded_coordinates = {}
-    for vertex in graph_range:
-        embedded_coordinates[vertex + 1] = []
-        for sub_vertex in initial_embedding[vertex + 1]:
-            subgraph_nodes.append(sub_vertex)
-            embedded_coordinates[vertex + 1].append([sub_vertex[0], sub_vertex[1]])
-
+    subgraph_nodes, node_2_index = list(), dict()
+    for i in graph_range:
+        for node in initial_embedding[i]:
+            node_2_index[node] = i
+            subgraph_nodes.append(node)
     subgraph = target_graph.subgraph(subgraph_nodes)
 
-    # Go through the vertices and merge them all; if crossovers found, do the merge coordinates average opposite
-    final_graph = {}
-    final_coordinates = {}
-    final_darts = {}
-    wrap_list = [[], []]
-    original_connection = {}
-    for vertex in graph_range:
-        graph = []
-        darts = []
-        coords = [[], []]
-        internal_size = 0
-        wrap = [False, False]
+    # Build the graph for attractor adjustment
+    attractor_graph, attractor_coordinates, attractor_darts, done_edges = dict(), dict(), dict(), set()
+    for i in graph_range:
+        for node in initial_embedding[i]:  # Loop over all the embedded nodes
+            attractor_graph[node] = []
+            attractor_coordinates[node] = [node[0], node[1]]
+            attractor_darts[node] = []
 
-        sub_vertices = initial_embedding[vertex + 1]
-        for node in subgraph.nodes:
-            if node in sub_vertices:
-                internal_size += 1
-                coords[0].append(node[0])
-                coords[1].append(node[1])
-
-                for edge in ntx.edges(subgraph, node):
-
-                    # Determine the dart
+            for edge in ntx.edges(subgraph, node):  # Add the connected nodes and darts
+                j = node_2_index[edge[1]]
+                if j == i or j in graph[i]:
                     dart = [0, 0]
-                    x1, y1 = edge[0]
-                    x2, y2 = edge[1]
+                    for axis in range(2):
+                        if abs(edge[0][axis] - edge[1][axis]) > 1 / scale_down:
+                            dart[axis] = np.sign(edge[0][axis] - edge[1][axis])
+                    attractor_graph[node].append(edge[1])
+                    attractor_darts[node].append(dart)
 
-                    if (x1 == 0) and (x2 == map_size[0] - 1 / scale_down):
-                        dart[0] = -1
-                    elif (x2 == 0) and (x1 == map_size[0] - 1 / scale_down):
-                        dart[0] = 1
-                    if (y1 == 0) and (y2 == map_size[1] - 1 / scale_down):
-                        dart[1] = -1
-                    elif (y2 == 0) and (y1 == map_size[1] - 1 / scale_down):
-                        dart[1] = 1
+    attractor_coordinates, attractor_darts = attractor_adjustment(attractor_graph, attractor_coordinates, attractor_darts, node_2_index, map_size, damping_ratio=0.5, iterations=100)
 
-                    # Determine if its another vertex
-                    for other_node in subgraph.nodes:
-                        if other_node == edge[1]:
-                            for other_vertex in graph_range:
-                                if (other_vertex + 1) not in graph:
-                                    if other_node in initial_embedding[other_vertex + 1]:
-                                        if other_vertex+1 in source_graph[vertex+1]:  # connections to other vertices get added
-                                            graph.append(other_vertex + 1)
-                                            darts.append(dart)
-                                            original_connection[(vertex+1, other_vertex+1)] = edge
-                                        elif other_vertex == vertex:  # connections to this vertex get merged
-                                            if dart[0] != 0:
-                                                wrap[0] = True
-                                            if dart[1] != 0:
-                                                wrap[1] = True
+    coordinates, darts, done_edges = dict(), dict(), set()
+    for i in graph:  # Merge the alike vertices of the graph
+        coordinate_sum = 0
+        coordinates_offset = np.subtract(np.divide(map_size, 2), attractor_coordinates[initial_embedding[i][0]])
+        for node in initial_embedding[i]:  # Loop over all the nodes for this vertex
+            coordinate_sum += np.mod(np.add(coordinates_offset, attractor_coordinates[node]), map_size)
+        coordinates[i] = np.mod(np.subtract(np.divide(coordinate_sum, len(initial_embedding[i])), coordinates_offset), map_size)
 
-        # if a crossover in the internal zone, do the shift to work out centroid, then go back\
-        avr = [[], []]
-        for axis in range(2):
-            avr[axis] = np.sum(coords[axis]) / internal_size
-            if wrap[axis]:
-                for index in range(len(coords[axis])):
-                    coords[axis][index] -= map_size[axis] / 2
-                    coords[axis][index] = coords[axis][index] % map_size[axis]
-                avr[axis] = (map_size[axis] / 2 + (np.sum(coords[axis]) / internal_size)) % map_size[axis]
-                wrap_list[axis].append(vertex + 1)
+    for i in graph:  # Make final darts
+        darts[i] = []
+        for j in graph[i]:
+            dart_candidates = []
+            for node1 in initial_embedding[i]:
+                for node2 in initial_embedding[j]:
+                    if node2 in attractor_graph[node1]:
+                        dart = attractor_darts[node1][attractor_graph[node1].index(node2)]
+                        dart_candidates.append(dart)
+            darts[i].append(dart)
 
-        final_graph[vertex + 1] = graph
-        final_coordinates[vertex + 1] = [avr[0], avr[1]]
-        final_darts[vertex + 1] = darts
+    return coordinates, darts, attractor_coordinates, node_2_index
 
-    # When there is a crossover determine dart changes
-    for vertex in graph_range:
-        this_coords = final_coordinates[vertex + 1]
-        for axis in range(2):
-            if vertex + 1 in wrap_list[axis]:
-                for index in range(len(final_graph[vertex + 1])):
-                    other_vertex = final_graph[vertex + 1][index]
-                    other_coords = final_coordinates[other_vertex]
 
-                    for thing in range(len(final_graph[other_vertex])):
-                        if final_graph[other_vertex][thing] == vertex + 1:
-                            index2 = thing
-                            break
+@njit(parallel=True)
+def _numba_attractor_adjustment(key_list: np.array,
+                                graph: np.array,
+                                coordinates: np.array,
+                                darts: np.array,
+                                attractor_array: np.array,
+                                damping_ratio: float,
+                                map_size: tuple[int, int],
+                                iterations: int):
+    dict_size = len(key_list)
+    map_size_array = np.asarray(map_size, dtype=np.float64)
+    velocity = np.zeros((dict_size, 2))
 
-                    if other_vertex not in wrap_list[axis]:
-                        if abs(this_coords[axis] - other_coords[axis]) < map_size[axis] / 2:
-                            final_darts[vertex + 1][index][axis] = 0
-                            final_darts[other_vertex][index2][axis] = 0
-                        else:
-                            if this_coords[axis] > map_size[axis] / 2:
-                                final_darts[vertex + 1][index][axis] = 1
-                                final_darts[other_vertex][index2][axis] = -1
-                            else:
-                                final_darts[vertex + 1][index][axis] = -1
-                                final_darts[other_vertex][index2][axis] = 1
-                    else:
-                        if abs(this_coords[axis] - other_coords[axis]) > map_size[axis] / 2:
-                            if this_coords[axis] > map_size[axis] / 2:
-                                final_darts[vertex + 1][index][axis] = 1
-                                final_darts[other_vertex][index2][axis] = -1
-                            else:
-                                final_darts[vertex + 1][index][axis] = -1
-                                final_darts[other_vertex][index2][axis] = 1
-                        else:
-                            final_darts[vertex + 1][index][axis] = 0
-                            final_darts[other_vertex][index2][axis] = 0
+    equilibrium = False
+    for _ in range(iterations):
 
-    # Check no erroneous edges/darts have been added
-    for vertex in graph_range:
-        counter = 0
-        for final_connection in final_graph[vertex + 1]:
-            if final_connection not in source_graph[vertex + 1]:
-                final_graph[vertex + 1].remove(final_connection)
-                final_darts[vertex + 1].remove(final_darts[vertex + 1][counter])
-            counter += 1
+        for i in prange(dict_size):
+            attractor_force = np.zeros(2)
+            for j in range(dict_size):
+                if attractor_array[i, j] == 1:
+                    attractor_force = attractor_force + np.asarray(coordinates[j] + darts[i, j] * map_size_array - coordinates[i], dtype=np.float64)
+            velocity[i] = damping_ratio * (velocity[i] + attractor_force)
 
-    return final_graph, final_coordinates, final_darts, embedded_coordinates
+        for i in range(dict_size):  # Check if non-fixed particles are within tolerance
+            if np.linalg.norm(velocity[i]) > 0.001:
+                break
+            if i == dict_size - 1:
+                equilibrium = True
+
+        for i in range(dict_size):  # Update the position
+            coordinates[i] = coordinates[i] + velocity[i]
+
+            for axis in range(2):
+                if not (0 <= coordinates[i, axis] < map_size_array[axis]):
+                    dart_change = -np.sign(coordinates[i, axis])
+                    coordinates[i, axis] = int(coordinates[i, axis] % map_size_array[axis])
+
+                    for j in range(dict_size):  # Iterating over all of this vertex's connections
+                        if graph[i, j]:
+                            new_value = darts[i, j, axis] + dart_change
+                            if new_value < -1:
+                                new_value = 1
+                            if new_value > 1:
+                                new_value = -1
+
+                            darts[i, j, axis] = int(new_value)  # Setting the dart for this vertex
+                            darts[j, i, axis] = int(-new_value)  # Setting the dart for other vertex
+        if equilibrium:
+            break
+    return coordinates, darts
+
+
+def attractor_adjustment(graph: dict,
+                         coordinates: dict,
+                         darts: dict,
+                         node_2_index: dict,
+                         map_size: tuple[int, int],
+                         damping_ratio: float,
+                         iterations: int):
+
+    key_list = np.zeros(len(graph), dtype=int)
+    graph_array = np.zeros((len(graph), len(graph)), dtype=int)
+    coordinates_array = np.zeros((len(graph), 2), dtype=int)
+    darts_array = np.zeros((len(graph), len(graph), 2), dtype=int)
+    attractor_array = np.zeros((len(graph), len(graph)), dtype=int)
+
+    ref_2_node, node_2_ref = dict(), dict()
+    index = 0
+    for node in node_2_index:
+        ref_2_node[index] = node
+        node_2_ref[node] = index
+        index += 1
+
+    index = 0
+    for i in graph:
+        key_list[index] = node_2_ref[i]
+        coordinates_array[index] = coordinates[i]
+
+        index2 = 0
+        for j in graph:
+            if j in graph[i]:
+                ji = graph[i].index(j)
+                graph_array[index, index2] = 1
+                darts_array[index, index2] = darts[i][ji]
+                if node_2_index[j] == node_2_index[i]:
+                    attractor_array[index, index2] = 1
+            else:
+                graph_array[index, index2] = 0
+                darts_array[index, index2] = [0, 0]
+            index2 += 1
+        index += 1
+
+    _coordinates, _darts = _numba_attractor_adjustment(key_list, graph_array, coordinates_array, darts_array, attractor_array, damping_ratio, map_size, iterations)
+    coordinates_output, darts_output = dict(), dict()
+
+    for i in range(len(key_list)):
+        node = ref_2_node[key_list[i]]
+        coordinates_output[node] = _coordinates[i].tolist()
+        darts_output[node] = [None] * len(graph[node])
+        for j in range(len(key_list)):
+            if graph_array[i, j]:
+                darts_output[node][graph[node].index(ref_2_node[key_list[j]])] = _darts[i, j].tolist()
+
+    return coordinates_output, darts_output
+

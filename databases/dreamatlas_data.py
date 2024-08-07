@@ -46,14 +46,14 @@ HOMELANDS_INFO = [
     [11, TERRAIN_PREF_BALANCED, LAYOUT_PREF_LAND, 128, 1],          # Tir na nog
     [12, TERRAIN_PREF_BALANCED, LAYOUT_PREF_LAND, 128, 1],          # Marverni
     [13, TERRAIN_PREF_MOUNTAINS, LAYOUT_PREF_LAND, 128, 1],         # Ulm
-    [14, TERRAIN_PREF_FOREST, LAYOUT_PREF_CAVE, 0, 2],              # Pyrene
-    [15, TERRAIN_PREF_BALANCED, LAYOUT_PREF_CAVE, 0, 2],            # Agartha
-    [16, TERRAIN_PREF_DESERT, LAYOUT_PREF_CAVE, 8388608, 2],        # Abysia
+    [14, TERRAIN_PREF_FOREST, LAYOUT_PREF_CAVE, 4224, 2],           # Pyrene
+    [15, TERRAIN_PREF_BALANCED, LAYOUT_PREF_CAVE, 4096, 2],         # Agartha
+    [16, TERRAIN_PREF_DESERT, LAYOUT_PREF_CAVE, 8392704, 2],        # Abysia
     [17, TERRAIN_PREF_DESERT, LAYOUT_PREF_LAND, 64, 1],             # Hinnom
     [18, TERRAIN_PREF_DESERT, LAYOUT_PREF_LAND, 64, 1],             # Ubar
     [19, TERRAIN_PREF_SWAMP, LAYOUT_PREF_LAND, 0, 1],               # Ur
     [20, TERRAIN_PREF_FOREST, LAYOUT_PREF_LAND, 8388608, 1],        # Kailasa
-    [21, TERRAIN_PREF_FOREST, LAYOUT_PREF_LAND, 8388608, 1],        # Lanka
+    [21, TERRAIN_PREF_FOREST, LAYOUT_PREF_LAND, 128, 1],            # Lanka
     [22, TERRAIN_PREF_BALANCED, LAYOUT_PREF_LAND, 0, 1],            # Tien Chi
     [23, TERRAIN_PREF_MOUNTAINS, LAYOUT_PREF_LAND, 8388608, 1],     # Yomi
     [24, TERRAIN_PREF_MOUNTAINS, LAYOUT_PREF_LAND, 8388608, 1],     # Caelum
@@ -83,11 +83,11 @@ HOMELANDS_INFO = [
     [56, TERRAIN_PREF_SWAMP, LAYOUT_PREF_LAND, 0, 1],               # Pythium
     [57, TERRAIN_PREF_FOREST, LAYOUT_PREF_LAND, 128, 1],            # Man
     [58, TERRAIN_PREF_FOREST, LAYOUT_PREF_LAND, 128, 1],            # Eriu
-    [59, TERRAIN_PREF_BALANCED, LAYOUT_PREF_CAVE, 0, 2],            # Agartha
+    [59, TERRAIN_PREF_BALANCED, LAYOUT_PREF_CAVE, 4096, 2],         # Agartha
     [60, TERRAIN_PREF_MOUNTAINS, LAYOUT_PREF_LAND, 0, 1],           # Ulm
     [61, TERRAIN_PREF_BALANCED, LAYOUT_PREF_LAND, 0, 1],            # Marignon
     [62, TERRAIN_PREF_KARST, LAYOUT_PREF_LAND, 128, 1],             # Pyrene
-    [63, TERRAIN_PREF_BALANCED, LAYOUT_PREF_LAND, 8388608, 2],      # Abysia
+    [63, TERRAIN_PREF_BALANCED, LAYOUT_PREF_LAND, 8392704, 2],      # Abysia
     [64, TERRAIN_PREF_DESERT, LAYOUT_PREF_LAND, 64, 1],             # Ashdod
     [65, TERRAIN_PREF_DESERT, LAYOUT_PREF_LAND, 64, 1],             # Naba
     [66, TERRAIN_PREF_BALANCED, LAYOUT_PREF_LAND, 0, 1],            # Uruk
@@ -98,7 +98,7 @@ HOMELANDS_INFO = [
     [71, TERRAIN_PREF_MOUNTAINS, LAYOUT_PREF_LAND, 8388608, 1],     # Caelum
     [72, TERRAIN_PREF_MOUNTAINS, LAYOUT_PREF_LAND, 8388608, 1],     # Nazca
     [73, TERRAIN_PREF_BALANCED, LAYOUT_PREF_LAND, 0, 1],            # Mictlan
-    [74, TERRAIN_PREF_SWAMP, LAYOUT_PREF_CAVE, 32, 2],              # Xibalba
+    [74, TERRAIN_PREF_SWAMP, LAYOUT_PREF_CAVE, 4128, 2],            # Xibalba
     [75, TERRAIN_PREF_SWAMP, LAYOUT_PREF_LAND, 32, 1],              # Ctis
     [76, TERRAIN_PREF_FOREST, LAYOUT_PREF_LAND, 0, 1],              # Machaka
     [77, TERRAIN_PREF_BALANCED, LAYOUT_PREF_ISLAND, 0, 1],          # Phaeacia
@@ -120,9 +120,9 @@ HOMELANDS_INFO = [
     [99, TERRAIN_PREF_BALANCED, LAYOUT_PREF_LAND, 0, 1],            # Lemuria
     [100, TERRAIN_PREF_FOREST, LAYOUT_PREF_LAND, 0, 1],             # Man
     [101, TERRAIN_PREF_MOUNTAINS, LAYOUT_PREF_LAND, 0, 1],          # Ulm
-    [102, TERRAIN_PREF_BALANCED, LAYOUT_PREF_CAVE, 0, 2],           # Agartha
+    [102, TERRAIN_PREF_BALANCED, LAYOUT_PREF_CAVE, 4096, 2],        # Agartha
     [103, TERRAIN_PREF_BALANCED, LAYOUT_PREF_COAST, 0, 1],          # Marignon
-    [104, TERRAIN_PREF_BALANCED, LAYOUT_PREF_LAND, 8388608, 2],     # Abysia
+    [104, TERRAIN_PREF_BALANCED, LAYOUT_PREF_LAND, 8392704, 2],     # Abysia
     [105, TERRAIN_PREF_PLAINS, LAYOUT_PREF_LAND, 0, 1],             # Ragha
     [106, TERRAIN_PREF_MOUNTAINS, LAYOUT_PREF_LAND, 8388608, 1],    # Caelum
     [107, TERRAIN_PREF_DESERT, LAYOUT_PREF_LAND, 64, 1],            # Gath
@@ -162,7 +162,7 @@ PERIPHERY_INFO = [
 ]
 
 # Connections settings [Standard border, Mountain pass, River border, Impassable, Road, River bridge, Impassable mountain]
-NEIGHBOUR_SPECIAL_WEIGHTS = [0.8, 0.05, 0.05, 0, 0.05, 0.05, 0.05]
+NEIGHBOUR_SPECIAL_WEIGHTS = [0.8, 0.05, 0.05, 0, 0.05, 0.02, 0.05]
 # check 33,
 
 # UNIVERSAL FUNCTIONS AND VARIABLES
@@ -183,15 +183,14 @@ NEIGHBOURS_Y_WRAP = np.array([[0, 0], [0, 1], [0, -1]])
 NEIGHBOURS_FULL = np.array([[0, 0], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [0, -1], [-1, -1], [-1, 0]])
 
 DATASET_GRAPHS = [[[] for i in range(7)] for d in range(17)]
-vertex = 0
-graph_dict = {}
+vertex, graph_dict = 0, dict()
 with open(ROOT_DIR / 'three_connected_graphs', 'r') as f:
     for line in f.readlines():
         data = line.split()
         if not data:
             DATASET_GRAPHS[vertex][degree].append(graph_dict)
             vertex = 0
-            graph_dict = {}
+            graph_dict = dict()
             continue
         vertex += 1
         degree = len(data) - 1

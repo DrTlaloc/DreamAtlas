@@ -193,9 +193,10 @@ class DominionsMap:
             if len(self.no_start_locations[plane]) != 0:
                 for entry in range(len(self.no_start_locations[plane])):
                     f.write('#nostart %s\n' % self.no_start_locations[plane][entry])
-            if len(self.special_start_locations[plane]) != 0:
-                for entry in range(len(self.special_start_locations[plane])):
-                    f.write('#specstart ' + ' '.join(map(str, self.special_start_locations[plane][entry])) + '\n')
+            if plane == 1:
+                if len(self.special_start_locations[plane]) != 0:
+                    for entry in range(len(self.special_start_locations)):
+                        f.write('#specstart ' + ' '.join(map(str, self.special_start_locations[entry])) + '\n')
             if len(self.team_start_locations[plane]) != 0:
                 for entry in range(len(self.team_start_locations[plane])):
                     f.write('#teamstart ' + ' '.join(map(str, self.team_start_locations[plane][entry])) + '\n')
@@ -229,6 +230,13 @@ class DominionsMap:
                 f.write('\n--Gate info\n')
                 for entry in range(len(self.gate_list[plane])):
                     f.write('#gate ' + ' '.join(map(str, self.gate_list[plane][entry])) + '\n')
+
+            # Province commands
+            for province in self.province_list[plane]:
+                if province.has_commands:
+                    f.write('#setland %i\n' % province.index)
+                    if province.population is not None:
+                        f.write('#population %i\n' % province.population)
 
             # Pixel ownership info
             f.write('\n--Pixel ownership info\n')
@@ -344,16 +352,14 @@ class DominionsMap:
             for ax in plane_axs:
                 ax.set(xlim=[0, map_x], ylim=[0, map_y])
 
-            index_dict = {0: 0}
-            region_dict = {0: -1}
-            terrain_dict = {0: -1}
-            population_dict = {0: -1}
+            index_dict, region_dict, terrain_dict, population_dict = {0: 0}, {0: -1}, {0: -1}, {0: -1}
             for province in self.province_list[plane]:
                 index_dict[province.index] = province.index
                 region_dict[province.index] = province.parent_region
                 terrain_dict[province.index] = 0
                 for terrain in terrain_int2list(province.terrain_int):
-                    terrain_dict[province.index] += TERRAIN_2_HEIGHTS_DICT[terrain]
+                    if terrain in TERRAIN_2_HEIGHTS_DICT:
+                        terrain_dict[province.index] += TERRAIN_2_HEIGHTS_DICT[terrain]
                 population_dict[province.index] = province.population
 
             plotting_pixel_map = np.transpose(self.pixel_map[plane])

@@ -16,7 +16,7 @@ class DreamAtlasSettings:
                  cap_connections: int = None,
                  homeland_size: int = None,
                  periphery_size: int = None,
-                 throne_count: int = None,
+                 throne_sites: int = None,
                  player_neighbours: int = None,
                  nations: list[int, ...] = None,
                  custom_nations: list[list[int, int, int, int, int], ...] = None,
@@ -56,8 +56,8 @@ class DreamAtlasSettings:
             homeland_size = 10
         if periphery_size is None:
             periphery_size = 3
-        if throne_count is None:
-            throne_count = 10
+        if throne_sites is None:
+            throne_sites = 10
         if player_neighbours is None:
             player_neighbours = 4
             
@@ -69,7 +69,7 @@ class DreamAtlasSettings:
         self.cap_connections = cap_connections
         self.homeland_size = homeland_size
         self.periphery_size = periphery_size            
-        self.throne_count = throne_count
+        self.throne_sites = throne_sites
         self.player_neighbours = player_neighbours
 
         # Info about nations/age
@@ -119,11 +119,13 @@ class DreamAtlasSettings:
                     self.homeland_size = int(_[1])
                 if _[0] == '#periphery_size':
                     self.periphery_size = int(_[1])
-                if _[0] == '#throne_count':
-                    self.throne_count = int(_[1])
+                if _[0] == '#throne_sites':
+                    self.throne_sites = int(_[1])
                 if _[0] == '#player_neighbours':
                     self.player_neighbours = int(_[1])
                 if _[0] == '#nation':
                     self.nations.append(int(_[1]))
+                if _[0] == '#customnation':
+                    self.custom_nations.append([int(_[1]), str(_[2]), str(_[3]), int(_[4]), int(_[5]), int(_[6]), int(_[7])])
                 if _[0] == '#age':
                     self.age = int(_[1])
