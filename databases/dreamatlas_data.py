@@ -9,13 +9,13 @@ from . import *
 # Terrain preference vector is the weighting for each type of terrain
 TERRAIN_PREF_BITS = [0, 16, 32, 64, 128, 256]
 TERRAIN_PREFERENCES = [         # TERRAIN_PREF_XXXX = [plains, highlands, swamp, waste, forest, farm]
-    [5, 1, 1, 1, 2, 1],      # Balanced
-    [10, 1, 1, 1, 1, 1],     # Plains
-    [5, 1, 1, 1, 5, 1],      # Forest
-    [3, 4, 1, 1, 2, 1],      # Mountains
-    [3, 1, 0.5, 3, 1, 0.5],  # Desert
-    [3, 1, 3, 0.5, 2, 1],    # Swamp
-    [5, 1, 1, 1, 2, 1]       # Karst
+    [5, 1, 1, 1, 2, 1],         # Balanced
+    [10, 1, 2, 1, 0.5, 0.5],    # Plains
+    [3, 1, 1, 0.5, 5, 2],       # Forest
+    [3, 4, 1, 1, 2, 1],         # Mountains
+    [3, 1, 0.5, 3, 0.5, 0.5],   # Desert
+    [3, 1, 3, 0.5, 2, 1],       # Swamp
+    [3, 2, 1, 1, 2, 1]          # Karst
 ]
 TERRAIN_PREF_BALANCED, TERRAIN_PREF_PLAINS, TERRAIN_PREF_FOREST, TERRAIN_PREF_MOUNTAINS, TERRAIN_PREF_DESERT, TERRAIN_PREF_SWAMP, TERRAIN_PREF_KARST = TERRAIN_PREFERENCES
 
@@ -24,15 +24,15 @@ LAYOUT_PREFERENCES = [  # LAYOUT_PREF_XXXX = [cap circle split, rest of homeland
     [1.0, 0.95],        # Land
     [1.0, 0.85],        # Cave
     [0.8, 0.8],         # Coast
-    [0.2, 0.8],         # Island
-    [0.0, 0.6],         # Deeps
-    [0.2, 0.6],         # Shallows
-    [0.0, 0.5]          # Lakes
+    [0.0, 0.9],         # Island
+    [0.0, 0.7],         # Deeps
+    [0.2, 0.7],         # Shallows
+    [0.7, 0.7]          # Lakes
 ]
 LAYOUT_PREF_LAND, LAYOUT_PREF_CAVE, LAYOUT_PREF_COAST, LAYOUT_PREF_ISLAND, LAYOUT_PREF_DEEPS, LAYOUT_PREF_SHALLOWS, LAYOUT_PREF_LAKES = LAYOUT_PREFERENCES
 
-TERRAIN_2_HEIGHTS_DICT = {0: 0, 4: -600, 16: 200, 32: 50, 64: 300, 128: 90, 256: 250, 2048: -200, 4096: 1000, 8388608: 500, 68719476736: 1}
-TERRAIN_2_SHAPES_DICT = {0: 1, 4: 2, 8: 0.7, 16: 0.7, 32: 0.5, 64: 2, 128: 2, 256: 0.5, 2048: 2, 4096: 0.7, 8388608: 1, 68719476736: 1}
+TERRAIN_2_HEIGHTS_DICT = {0: 0, 4: -600, 16: 200, 32: 50, 64: 300, 128: 90, 256: 250, 2048: -200, 4096: 1000, 8388608: 500, 68719476736: -100}
+TERRAIN_2_SHAPES_DICT = {0: 1, 4: 2, 8: 0.7, 16: 0.7, 32: 0.5, 64: 2, 128: 2, 256: 0.5, 2048: 1, 4096: 0.7, 8388608: 1, 68719476736: 1}
 
 # Homelands format: [Nation index, terrain preference, layout preference, capital terrain int, plane]
 HOMELANDS_INFO = [
@@ -47,7 +47,7 @@ HOMELANDS_INFO = [
     [12, TERRAIN_PREF_BALANCED, LAYOUT_PREF_LAND, 128, 1],          # Marverni
     [13, TERRAIN_PREF_MOUNTAINS, LAYOUT_PREF_LAND, 128, 1],         # Ulm
     [14, TERRAIN_PREF_FOREST, LAYOUT_PREF_CAVE, 4224, 2],           # Pyrene
-    [15, TERRAIN_PREF_BALANCED, LAYOUT_PREF_CAVE, 4096, 2],         # Agartha
+    [15, TERRAIN_PREF_SWAMP, LAYOUT_PREF_CAVE, 4096, 2],            # Agartha
     [16, TERRAIN_PREF_DESERT, LAYOUT_PREF_CAVE, 8392704, 2],        # Abysia
     [17, TERRAIN_PREF_DESERT, LAYOUT_PREF_LAND, 64, 1],             # Hinnom
     [18, TERRAIN_PREF_DESERT, LAYOUT_PREF_LAND, 64, 1],             # Ubar
@@ -58,7 +58,7 @@ HOMELANDS_INFO = [
     [23, TERRAIN_PREF_MOUNTAINS, LAYOUT_PREF_LAND, 8388608, 1],     # Yomi
     [24, TERRAIN_PREF_MOUNTAINS, LAYOUT_PREF_LAND, 8388608, 1],     # Caelum
     [25, TERRAIN_PREF_FOREST, LAYOUT_PREF_LAND, 128, 1],            # Mictlan
-    [26, TERRAIN_PREF_BALANCED, LAYOUT_PREF_CAVE, 0, 2],            # Xibalba
+    [26, TERRAIN_PREF_BALANCED, LAYOUT_PREF_CAVE, 4224, 2],         # Xibalba
     [27, TERRAIN_PREF_SWAMP, LAYOUT_PREF_LAND, 32, 1],              # Ctis
     [28, TERRAIN_PREF_PLAINS, LAYOUT_PREF_LAND, 0, 1],              # Machaka
     [29, TERRAIN_PREF_DESERT, LAYOUT_PREF_COAST, 0, 1],             # Berytos

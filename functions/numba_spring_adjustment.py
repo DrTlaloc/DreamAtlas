@@ -44,7 +44,7 @@ def _numba_spring_electron_adjustment(key_list: np.array,
                 velocity[i] = damping_ratio * (velocity[i] + electron_force[i] + spring_force[i])
 
         for c in range(dict_size):  # Check if non-fixed particles are within tolerance
-            if np.linalg.norm(velocity[c]) > 0.01:
+            if np.linalg.norm(velocity[c]) > 0.0001:
                 break
             if c == dict_size - 1:
                 equilibrium = True

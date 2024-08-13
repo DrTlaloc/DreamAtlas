@@ -17,7 +17,7 @@ def _jump_flood_algorithm(pixel_matrix: np.array,
 
     size_shape_factor = np.full(len(seed_array), np.inf, dtype=np.float64)
     for i in range(len(seed_array)):
-        size_shape_factor[i] = np.power(weight_array[i], 1 / shape_array[i])
+        size_shape_factor[i] = np.power(1 / weight_array[i], 1 / shape_array[i])
 
     end = False
     ping_matrix = pixel_matrix
@@ -119,12 +119,10 @@ def find_pixel_ownership(coordinates_dict: dict,
                                                                                             vwrap=vwrap)
 
     # Scale the matrix back up and run a JFA again to refine
-    zoom = map_size[0] / small_output_matrix.shape[0]
+    zoom = np.divide(map_size, small_output_matrix.shape)
     final_matrix = sc.ndimage.zoom(small_output_matrix, zoom=zoom, order=0, output=np.int32)[:map_size[0], :map_size[1]]
-    final_distance_matrix = np.multiply(small_distance_matrix, scale_down)
-    final_distance_matrix = sc.ndimage.zoom(final_distance_matrix, zoom=zoom, order=0, output=np.float64)[:map_size[0], :map_size[1]]
-    final_vector_matrix = np.multiply(small_vector_matrix, scale_down)
-    final_vector_matrix = sc.ndimage.zoom(final_vector_matrix, zoom=[zoom, zoom, 1], order=0, output=np.int32)[:map_size[0], :map_size[1]]
+    final_distance_matrix = sc.ndimage.zoom(np.multiply(small_distance_matrix, scale_down), zoom=zoom, order=0, output=np.float64)[:map_size[0], :map_size[1]]
+    final_vector_matrix = sc.ndimage.zoom(np.multiply(small_vector_matrix, scale_down), zoom=[zoom[0], zoom[1], 1], order=0, output=np.int32)[:map_size[0], :map_size[1]]
 
     final_seed_array = np.empty((dict_size, 2), dtype=np.int32)
     for point in coordinates_dict:
@@ -198,5 +196,6 @@ def pb_pixel_allocation(pixel_matrix):
                 first_x = x
                 first_y = y
                 pb_length = 1
+        pixel_ownership_list.append([first_x, first_y, pb_length, first_prov_index])  # final section
 
     return pixel_ownership_list

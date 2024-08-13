@@ -10,6 +10,7 @@ import random as rd
 import networkx as ntx
 import minorminer as mnm
 from numba import njit, prange
+from copy import copy
 
 # Importing classes and functions at the end avoids circular dependencies
 from DreamAtlas.databases import *

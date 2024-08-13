@@ -120,24 +120,29 @@ class Region:
             else:
                 province.terrain_int += 512  # No start location
 
-            if index <= self.anchor_connections:  # cap circle
-                province.terrain_int = rd.choices(TERRAIN_PREF_BITS, weights=self.terrain_pref, k=1)[0]
-                if not self.is_throne:
-                    if index / self.anchor_connections > self.layout[0]:  # land/sea
+                if index <= self.anchor_connections:  # cap circle
+                    if not self.is_throne:
+                        if index / self.anchor_connections > self.layout[0]:  # land/sea
+                            province.terrain_int += 4
+                else:  # other homeland provinces
+                    if rd.random() > self.layout[1]:  # land/sea
                         province.terrain_int += 4
-            else:  # other homeland provinces
-                province.terrain_int = rd.choices(TERRAIN_PREF_BITS, weights=self.terrain_pref, k=1)[0]
-                if rd.random() > self.layout[1]:  # land/sea
-                    province.terrain_int += 4
 
-            if self.is_throne:
-                province.terrain_int += 33554432  # Good throne location
-            else:
-                province.terrain_int += 134217728  # Bad throne location
+                choice = rd.choices(TERRAIN_PREF_BITS, weights=self.terrain_pref, k=1)[0]
+                if province.terrain_int & 4 == 4:
+                    if not (choice & 32 == 32 or choice & 64 == 64 or choice & 256 == 256):
+                        province.terrain_int += choice
+                else:
+                    province.terrain_int += choice
 
-            if province.plane == 2:
-                province.terrain_int += 4096  # Cave layer
-                province.terrain_int += 576460752303423488  # Cave wall effect
+                if self.is_throne:
+                    province.terrain_int += 33554432  # Good throne location
+                else:
+                    province.terrain_int += 134217728  # Bad throne location
+
+                if province.plane == 2:
+                    province.terrain_int += 4096  # Cave layer
+                    province.terrain_int += 576460752303423488  # Cave wall effect
 
     def generate_population(self,
                             seed: int = None):  # Generates the population for the region

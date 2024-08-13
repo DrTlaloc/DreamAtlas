@@ -2,7 +2,7 @@ from DreamAtlas import *
 
 
 def DreamAtlasGenerator(settings, seed=None):
-    map_class = DominionsMap(1)
+    map_class = DominionsMap(settings.index)
     map_class.settings = settings
     map_class.seed = settings.seed
     dibber(map_class, seed)
@@ -20,12 +20,20 @@ def DreamAtlasGenerator(settings, seed=None):
     ########################################################################################################################
     # Generate the player layout graph, determine the map size/region scale
     print('\nMaking player layout....')
-    map_class.map_size[1], map_class.map_size[2] = [4500, 2600],  [4500, 2600]
-    map_class.scale[1], map_class.scale[2] = [450, 200], [450, 200]
+    pixels = [0, 4000000]
+    for nation in nation_list:
+        if nation.home_plane == 1:
+            pixels[0] += 900000
+        elif nation.home_plane == 2:
+            pixels[0] += 450000
+            pixels[1] += 450000
+    l1, l2 = np.sqrt(pixels[0] / 1.7), np.sqrt(pixels[1] / 1.7)
+    map_class.map_size[1], map_class.map_size[2] = [int(round(1.7*l1, -2)), int(round(l1, -2))],  [int(round(1.7*l2, -2)), int(round(l2, -2))]
+    map_class.scale[1], map_class.scale[2] = [0.1*map_class.map_size[1][0], 0.1*map_class.map_size[1][1]], [0.1*map_class.map_size[2][0], 0.1*map_class.map_size[2][1]]
     map_class.planes = [1, 2]
 
     layout = DominionsLayout(map_class)
-    layout.generate_region_layout()
+    layout.generate_region_layout(seed=seed)
 
     ########################################################################################################################
     # Assemble the regions and generate the initial province layout
@@ -78,7 +86,6 @@ def DreamAtlasGenerator(settings, seed=None):
                                    map_size=map_class.map_size[1])
 
         periphery_list.append(new_periphery)
-        new_periphery.provinces[0].fixed = True
         for province in new_periphery.provinces:
             province.index = province_index[province.plane]
             province_list[province.plane].append(province)
@@ -112,7 +119,7 @@ def DreamAtlasGenerator(settings, seed=None):
     y_range = np.arange(1, map_class.map_size[2][1]-10, 0.8660 * cave_wall_dist)
     for x in x_range:
         for y in y_range:
-            new_wall = Province(province_index[2], plane=2, terrain_int=4096+68719476736+576460752303423488, population=0, capital_location=False, capital_nation=None, coordinates=[int(x), int(y)], size=0.4, shape=1)
+            new_wall = Province(province_index[2], plane=2, terrain_int=4096+68719476736+576460752303423488, population=0, capital_location=False, capital_nation=None, coordinates=[int(x), int(y)], size=2, shape=1)
             province_index[2] += 1
             new_wall.parent_region = -1
             province_list[2].append(new_wall)

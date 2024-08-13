@@ -100,9 +100,7 @@ class DominionsLayout:
         map_size = self.map.map_size[1]
 
         # Select a player layout and build the basic graph
-        graph = rd.choice(DATASET_GRAPHS[len(self.map.settings.nations)+len(self.map.settings.custom_nations)][self.map.settings.player_neighbours])
-
-        print(graph)
+        graph = copy(rd.choice(DATASET_GRAPHS[len(self.map.settings.nations)+len(self.map.settings.custom_nations)][self.map.settings.player_neighbours]))
 
         # Now add periphery regions in between the players
         done_edges, rotation, p = set(), dict(), len(graph)
@@ -122,14 +120,10 @@ class DominionsLayout:
 
         coordinates, darts, _, __ = embed_region_graph(graph, map_size, 0.01, seed)
 
-        print(graph, 'working1')
-
         weights = dict()
         for i in graph:
             weights[i] = 1
-        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, [0], map_size, ratios=(0.5, 0.05, 10), iterations=1000)  # final pass to clean up the embedding
-
-        print(graph, 'working2')
+        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, [], map_size, ratios=(0.5, 0.1, 1), iterations=1000)  # final pass to clean up the embedding
 
         edges_set, embedding = set(), dict()
         for i in graph:  # edges_set is an undirected graph as a set of undirected edges
@@ -190,8 +184,6 @@ class DominionsLayout:
             rotation[t] = 0
             t += 1
 
-        print(graph, 'working3')
-
         self.region_graph = graph
         self.region_coordinates = coordinates
         self.region_darts = darts
@@ -207,22 +199,26 @@ class DominionsLayout:
         map_size = self.map.map_size[plane]
 
         weights, fixed_points, lloyd_points, count_2_index = dict(), list(), list(), dict()
+        counter = 0
         for index in range(len(province_list)):
             province = province_list[index]
             weights[province.index] = province.size
-            lloyd_points.append(province_list[index].coordinates)
             if province.fixed:
                 fixed_points.append(province.index)
+            else:
+                lloyd_points.append(province_list[index].coordinates)
+                count_2_index[counter] = index
+                counter += 1
 
-        lloyd = LloydRelaxation(np.array(lloyd_points))
-        for _ in range(3):
-            lloyd.relax()
-        lloyd_points = lloyd.get_points()
-        for index in range(len(lloyd_points)):
-            province_list[index].coordinates = lloyd_points[index]
+        # lloyd = LloydRelaxation(np.array(lloyd_points))
+        # for _ in range(3):
+        #     lloyd.relax()
+        # lloyd_points = lloyd.get_points()
+        # for index in range(len(lloyd_points)):
+        #     province_list[count_2_index[index]].coordinates = lloyd_points[index]
 
         graph, coordinates, darts = make_delaunay_graph(province_list, map_size)
-        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.5, 0.05, 3), iterations=1000)
+        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.3, 0.2, 40), iterations=1000)
 
         for province in province_list:
             province.coordinates = coordinates[province.index]
@@ -267,16 +263,17 @@ class DominionsLayout:
             if choice != 0:
                 fail = False
                 for index in range(2):
+                    ti = i_j_provs[index].terrain_int
                     if i_j_provs[index].capital_location:  # Ignore caps
                         fail = True
-                    elif i_j_provs[index].terrain_int & 4 == 4:  # Ignore UW
+                    elif has_terrain(ti, 4):
                         fail = True
-                    elif i_j_provs[index].terrain_int & 4096 == 4096:  # Ignore cave
+                    elif has_terrain(ti, 4096):
                         fail = True
-                    elif i_j_provs[index].terrain_int & 68719476736 == 68719476736:  # if cave wall
+                    elif has_terrain(ti, 68719476736):  # if cave wall
                         self.special_neighbours[plane].append([i, j, 4])
                         fail = True
-                    elif (choice == 33 or choice == 36) and not (i_j_provs[index].terrain_int & 8388608 == 8388608):
+                    elif (choice == 33 or choice == 36) and not has_terrain(ti, 8388608):
                         i_j_provs[index].terrain_int += 8388608
                 if not fail:
                     self.special_neighbours[plane].append([i, j, choice])
@@ -296,7 +293,8 @@ class DominionsLayout:
                         region_plane_dict[plane][province.parent_region] = []
                         if province.parent_region not in region_list:
                             region_list.append(province.parent_region)
-                    region_plane_dict[plane][province.parent_region].append(province.index)
+                    if not has_terrain(province.terrain_int, 4):
+                        region_plane_dict[plane][province.parent_region].append(province.index)
         gate = 1
         for region in region_list:  # randomly gate them
             planes = []
@@ -332,7 +330,7 @@ class DominionsLayout:
 
         for i in self.region_graph:
             x0, y0 = self.region_coordinates[i]
-            if i <= len(self.map.settings.nations):
+            if i <= len(self.map.settings.nations)+len(self.map.settings.custom_nations):
                 colour = 'go'
             elif i <= len(self.region_graph) - self.map.settings.throne_sites:
                 colour = 'ro'

@@ -20,11 +20,12 @@ def find_shape_size(province, settings):  # Function for calculating the size of
     shape = 2
 
     # size - terrain
-    if terrain_int & 4:  # sea
+    if terrain_int & 4 == 4:  # sea
         size *= settings.water_province_size
-    if terrain_int & 4096:  # cave
+    if terrain_int & 4096 == 4096:  # cave
         size *= settings.cave_province_size
-    size *= 2 / (1 + np.e ** (0.01 * (province.population / 10000 - 1)))  # size - population
+    if settings.pop_balancing != 0:
+        size *= 2 / (1 + np.e ** (0.01 * (province.population / 10000 - 1)))  # size - population
 
     # shape
     for terrain in TERRAIN_2_SHAPES_DICT:
@@ -57,6 +58,11 @@ def terrain_2_resource_stats(terrain_int_list: list[int, ...],
         resource_stats.append(average)
 
     return resource_stats
+
+
+def has_terrain(ti, t):  # Checks terrain ints for specific terrains
+
+    return ti & t == t
 
 
 def nations_2_periphery(nations):
