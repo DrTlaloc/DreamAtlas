@@ -25,9 +25,9 @@ LAYOUT_PREFERENCES = [  # LAYOUT_PREF_XXXX = [cap circle split, rest of homeland
     [1.0, 1.0],         # Cave
     [0.8, 0.8],         # Coast
     [0.0, 0.9],         # Island
-    [0.0, 0.7],         # Deeps
-    [0.2, 0.7],         # Shallows
-    [0.7, 0.7]          # Lakes
+    [0.0, 0.8],         # Deeps
+    [0.2, 0.8],         # Shallows
+    [0.7, 0.8]          # Lakes
 ]
 LAYOUT_PREF_LAND, LAYOUT_PREF_CAVE, LAYOUT_PREF_COAST, LAYOUT_PREF_ISLAND, LAYOUT_PREF_DEEPS, LAYOUT_PREF_SHALLOWS, LAYOUT_PREF_LAKES = LAYOUT_PREFERENCES
 

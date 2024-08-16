@@ -27,7 +27,7 @@
 -- Nations - use the nation number!
 #nation 87
 #nation 80
-#customnation 420 'Coast_Phaeacia' 'Coastal_Dark_Ships' 0 2 0 1
+#customnation 77 'Coast_Phaeacia' 'Coastal_Dark_Ships' 0 2 0 1
 #nation 76
 #nation 74
 #nation 85

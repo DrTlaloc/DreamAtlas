@@ -370,11 +370,13 @@ class DominionsMap:
 
             # Plotting the contourf and the province border contour map
             plane_axs[0].imshow(plane_general, cmap=cm.Pastel1)
+            plane_axs[0].contour(plane_general, levels=max(self.layout.graph[plane]), colors=['white', ])
             plane_axs[1].imshow(plane_regions, vmin=1, vmax=len(self.layout.region_graph), cmap=cm.tab20)
+            plane_axs[1].contour(plane_regions, levels=max(self.layout.graph[plane]), colors=['white', ])
             plane_axs[2].imshow(plane_terrain, vmin=-200, vmax=600, cmap=cm.terrain)
+            plane_axs[2].contour(plane_terrain, levels=max(self.layout.graph[plane]), colors=['white', ])
             plane_axs[3].imshow(plane_population, cmap=cm.YlGn)
-            for ax in plane_axs:
-                ax.contour(plane_general, levels=max(self.layout.graph[plane]), colors=['white', ])
+            plane_axs[3].contour(plane_general, levels=max(self.layout.graph[plane]), colors=['white', ])
 
             virtual_graph, virtual_coordinates = make_virtual_graph(self.layout.graph[plane], self.layout.coordinates[plane],
                                                                     self.layout.darts[plane], self.map_size[plane])

@@ -3,7 +3,7 @@ from DreamAtlas import *
 PATH = r'C:\Users\amyau\PycharmProjects\mapTlaloc\DreamAtlas\examples\\'
 summer_smackdowns = ['smackdown_ea1', 'smackdown_ea2', 'smackdown_ma', 'smackdown_la']
 
-index = 0
+index = 3
 zegma = summer_smackdowns[index]
 
 # Load settings

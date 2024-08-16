@@ -118,7 +118,7 @@ class Region:
                 province.terrain_int += self.nations[0].cap_terrain  # Capital terrain
                 province.terrain_int += 67108864  # Good start location
             else:
-                province.terrain_int += 512  # No start location
+                # province.terrain_int += 512  # No start location
 
                 if index <= self.anchor_connections:  # cap circle
                     if not self.is_throne:

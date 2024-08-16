@@ -111,12 +111,14 @@ def DreamAtlasGenerator(settings, seed=None):
     cave_wall_dist = int(min(map_class.map_size[2]) / 10)
     x_range = np.arange(1, map_class.map_size[2][0]-10, cave_wall_dist)
     y_range = np.arange(1, map_class.map_size[2][1]-10, 0.8660 * cave_wall_dist)
+    cave_walls = list()
     for x in x_range:
         for y in y_range:
             new_wall = Province(province_index[2], plane=2, terrain_int=4096+68719476736+576460752303423488, population=0, capital_location=False, capital_nation=None, coordinates=[int(x), int(y)], size=2, shape=1)
             province_index[2] += 1
             new_wall.parent_region = -1
             province_list[2].append(new_wall)
+            cave_walls.append(new_wall)
 
     for region in homeland_list:  # Curse you Illwinterrr!!!!!!
         nation = region.nations[0]
@@ -137,11 +139,61 @@ def DreamAtlasGenerator(settings, seed=None):
         layout.generate_province_layout(plane=plane)
         layout.generate_neighbours(plane=plane)
         layout.generate_special_neighbours(plane=plane)
+    layout.generate_gates()
 
+    minor_caves = int(0.1 * len(province_list[1]))
+    cave_peripheries = rd.sample(periphery_list, minor_caves)
+    pair_peripheries = [cave_peripheries[i:i+2] for i in range(0, len(cave_peripheries), 2)]
+    gate = layout.gates[1][-1][1]
+    for pair in pair_peripheries:
+        surface_provinces, new_cave = list(), list()
+        for periphery in pair:
+            for province in periphery.provinces:
+                if not has_terrain(province.terrain_int, 4):
+                    surface_provinces.append(province)
+                    break
+
+        # select two adjacent walls to change
+        rd.shuffle(cave_walls)
+        for wall in cave_walls:
+            fail = False
+            if not has_terrain(wall.terrain_int, 68719476736):
+                fail = True
+            else:
+                for i in layout.graph[2][wall.index]:
+                    i_province = province_list[2][i-1]
+                    if not has_terrain(i_province.terrain_int, 68719476736):
+                        fail = True
+                        break
+                    else:
+                        for j in layout.graph[2][i_province.index]:
+                            j_province = province_list[2][j-1]
+                            if not has_terrain(j_province.terrain_int, 68719476736):
+                                fail = True
+                                break
+            if not fail:
+                new_cave = [wall, i_province]
+                break
+
+        # update wall province info
+        for province in new_cave:
+            province.has_commands = True
+            province.terrain_int = 4096
+            province.parent_region = region_index
+            province.population = 9000
+            province.size = settings.cave_province_size
+            province.shape = 3
+
+        gate += 2
+        layout.gates[1].append([surface_provinces[0].index, gate-1])
+        layout.gates[2].append([wall.index, gate-1])
+        layout.gates[1].append([surface_provinces[1].index, gate])
+        layout.gates[2].append([i_province.index, gate])
+
+    for plane in map_class.planes:
         for province in province_list[plane]:  # Do this here in case of terrain changes from mountains (curse Illwinter)
             terrain_list[plane].append([province.index, province.terrain_int])
             province.coordinates = layout.coordinates[plane][province.index]
-    layout.generate_gates()
 
     map_class.terrain_list = terrain_list
     map_class.neighbour_list = layout.neighbours
