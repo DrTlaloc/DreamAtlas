@@ -120,10 +120,18 @@ class DominionsLayout:
 
         coordinates, darts, _, __ = embed_region_graph(graph, map_size, 0.01, seed)
 
-        weights = dict()
+        weights, fixed_points = dict(), dict()
         for i in graph:
             weights[i] = 1
-        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, [], map_size, ratios=(0.5, 0.1, 1), iterations=1000)  # final pass to clean up the embedding
+            fixed_points[i] = 0
+        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.1, 0.3, 100), iterations=10000)  # final pass to clean up the embedding
+
+        # find rotations of peripheries
+        for p in rotation:
+            i = graph[p][0]
+            i_dart = darts[i][graph[i].index(p)]
+            vector = np.subtract(np.add(coordinates[p], np.multiply(i_dart, map_size)), coordinates[i])
+            rotation[p] = 90 + np.angle(vector[0] + vector[1] * 1j, deg=True)
 
         edges_set, embedding = set(), dict()
         for i in graph:  # edges_set is an undirected graph as a set of undirected edges
@@ -175,7 +183,7 @@ class DominionsLayout:
             print("\033[31m" + "Warning: less thrones (%i) than good throne locations (%i)\x1b[0m" % (self.map.settings.throne_sites, len(potential_thrones)))
 
         t = len(graph) + 1
-        for coordinate in range(self.map.settings.throne_sites):  # Adding the throne to the dicts
+        for _ in range(self.map.settings.throne_sites):  # Adding the throne to the dicts
             coordinate = rd.choice(potential_thrones)
             potential_thrones.remove(coordinate)
             graph[t] = []
@@ -198,30 +206,28 @@ class DominionsLayout:
         province_list = self.map.province_list[plane]
         map_size = self.map.map_size[plane]
 
-        weights, fixed_points, lloyd_points, count_2_index = dict(), list(), list(), dict()
+        weights, fixed_points, lloyd_points, count_2_index = dict(), dict(), list(), dict()
         counter = 0
         for index in range(len(province_list)):
             province = province_list[index]
             weights[province.index] = province.size
             if province.fixed:
-                fixed_points.append(province.index)
+                fixed_points[province.index] = 1
             else:
+                fixed_points[province.index] = 0
                 lloyd_points.append(province_list[index].coordinates)
                 count_2_index[counter] = index
                 counter += 1
 
-        # lloyd = LloydRelaxation(np.array(lloyd_points))
-        # for _ in range(3):
-        #     lloyd.relax()
-        # lloyd_points = lloyd.get_points()
-        # for index in range(len(lloyd_points)):
-        #     province_list[count_2_index[index]].coordinates = lloyd_points[index]
+        lloyd = LloydRelaxation(np.array(lloyd_points))
+        for _ in range(3):
+            lloyd.relax()
+        lloyd_points = lloyd.get_points()
+        for index in range(len(lloyd_points)):
+            province_list[count_2_index[index]].coordinates = lloyd_points[index]
 
         graph, coordinates, darts = make_delaunay_graph(province_list, map_size)
-        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.3, 0.2, 40), iterations=1000)
-
-        for province in province_list:
-            province.coordinates = coordinates[province.index]
+        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.4, 0.4, 100), iterations=2000)
 
         self.graph[plane] = graph
         self.coordinates[plane] = coordinates
@@ -282,19 +288,18 @@ class DominionsLayout:
                        seed: int = None):
         dibber(self, seed)  # Setting random seed
 
-        self.gates = [[] for _ in range(10)]
-        region_plane_dict = {}
-        region_list = []
+        self.gates, region_plane_dict, region_list = [[] for _ in range(10)], dict(), list()
         for plane in range(1, 10):  # sort the provinces into region-plane buckets and remove invalid candidates
-            region_plane_dict[plane] = {}
+            region_plane_dict[plane] = dict()
             for province in self.map.province_list[plane]:
-                if not province.capital_location:
-                    if province.parent_region not in region_plane_dict[plane]:
+                if not province.capital_location and not has_terrain(province.terrain_int, 4):
+                    if province.parent_region not in region_plane_dict[plane]:  # Add
                         region_plane_dict[plane][province.parent_region] = []
                         if province.parent_region not in region_list:
                             region_list.append(province.parent_region)
-                    if not has_terrain(province.terrain_int, 4):
-                        region_plane_dict[plane][province.parent_region].append(province.index)
+
+                    region_plane_dict[plane][province.parent_region].append(province.index)
+
         gate = 1
         for region in region_list:  # randomly gate them
             planes = []

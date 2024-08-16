@@ -20,16 +20,17 @@ def DreamAtlasGenerator(settings, seed=None):
     ########################################################################################################################
     # Generate the player layout graph, determine the map size/region scale
     print('\nMaking player layout....')
-    pixels = [0, 4000000]
+    pixels, ug_nations = [0, 4000000], 0
     for nation in nation_list:
         if nation.home_plane == 1:
             pixels[0] += 900000
         elif nation.home_plane == 2:
             pixels[0] += 450000
             pixels[1] += 450000
+            ug_nations += 1
     l1, l2 = np.sqrt(pixels[0] / 1.7), np.sqrt(pixels[1] / 1.7)
     map_class.map_size[1], map_class.map_size[2] = [int(round(1.7*l1, -2)), int(round(l1, -2))],  [int(round(1.7*l2, -2)), int(round(l2, -2))]
-    map_class.scale[1], map_class.scale[2] = [0.1*map_class.map_size[1][0], 0.1*map_class.map_size[1][1]], [0.1*map_class.map_size[2][0], 0.1*map_class.map_size[2][1]]
+    map_class.scale[1], map_class.scale[2] = [0.05*map_class.map_size[1][0], 0.05*map_class.map_size[1][1]], [0.02*map_class.map_size[2][0], 0.02*map_class.map_size[2][1]]
     map_class.planes = [1, 2]
 
     layout = DominionsLayout(map_class)
@@ -39,23 +40,19 @@ def DreamAtlasGenerator(settings, seed=None):
     # Assemble the regions and generate the initial province layout
     print('\nMaking regions....')
     # Generate the homelands
-    region_index = 1
     province_index = [1 for _ in range(10)]
     homeland_list = []
     allowed_nations_list = []
     special_start_locations = []
     province_list = [[] for _ in range(10)]
     terrain_list = [[] for _ in range(10)]
+    region_index = 1
     for nation in nation_list:
-        new_homeland = Region(index=region_index, region_type='Homeland', nations=[nation], seed=settings.seed,
-                              settings=settings)
+        new_homeland = Region(index=region_index, region_type='Homeland', nations=[nation], seed=settings.seed, settings=settings)
         new_homeland.generate_graph()
         new_homeland.generate_terrain()
         new_homeland.generate_population()
-        new_homeland.embed_region(global_coordinates=layout.region_coordinates[region_index],
-                                  rotation=0,
-                                  scale=map_class.scale[1],
-                                  map_size=map_class.map_size[1])
+        new_homeland.embed_region(global_coordinates=layout.region_coordinates[region_index], rotation=0, scale=map_class.scale, map_size=map_class.map_size)
 
         # Adding info to the map class
         new_homeland.provinces[0].fixed = True
@@ -70,7 +67,7 @@ def DreamAtlasGenerator(settings, seed=None):
 
     # Generate the peripherals
     periphery_list = []
-    for periphery_index in range(region_index, 1 + int(0.5 * len(settings.nations) * settings.player_neighbours)):
+    for periphery_index in range(region_index, region_index + int(0.5 * len(nation_list) * settings.player_neighbours)):
         connected_homelands = layout.region_graph[periphery_index]
         nations = [nation_list[connected_homelands[0] - 1], nation_list[connected_homelands[1] - 1]]
 
@@ -82,8 +79,8 @@ def DreamAtlasGenerator(settings, seed=None):
         new_periphery.generate_population()
         new_periphery.embed_region(global_coordinates=layout.region_coordinates[periphery_index],
                                    rotation=layout.region_rotation[periphery_index],
-                                   scale=map_class.scale[1],
-                                   map_size=map_class.map_size[1])
+                                   scale=map_class.scale,
+                                   map_size=map_class.map_size)
 
         periphery_list.append(new_periphery)
         for province in new_periphery.provinces:
@@ -94,16 +91,13 @@ def DreamAtlasGenerator(settings, seed=None):
 
     # # Generate the thrones
     throne_list = []
-    for throne_index in range(region_index, region_index + 1 + map_class.settings.throne_sites):
+    for throne_index in range(region_index, region_index + map_class.settings.throne_sites):
         new_throne = Region(index=region_index, region_type='Throne', nations=[], seed=map_class.seed,
                             settings=map_class.settings)
         new_throne.generate_graph()
         new_throne.generate_terrain()
         new_throne.generate_population()
-        new_throne.embed_region(global_coordinates=layout.region_coordinates[throne_index],
-                                rotation=0,
-                                scale=map_class.scale[1],
-                                map_size=map_class.map_size[1])
+        new_throne.embed_region(global_coordinates=layout.region_coordinates[throne_index], rotation=0, scale=map_class.scale, map_size=map_class.map_size)
 
         throne_list.append(new_throne)
         new_throne.provinces[0].fixed = True
@@ -113,8 +107,8 @@ def DreamAtlasGenerator(settings, seed=None):
             province_index[province.plane] += 1
         region_index += 1
 
-    # Add the cave wall provinces
-    cave_wall_dist = 300
+    # Add the cave wall provinces and seed random minor caves
+    cave_wall_dist = int(min(map_class.map_size[2]) / 10)
     x_range = np.arange(1, map_class.map_size[2][0]-10, cave_wall_dist)
     y_range = np.arange(1, map_class.map_size[2][1]-10, 0.8660 * cave_wall_dist)
     for x in x_range:
@@ -146,6 +140,7 @@ def DreamAtlasGenerator(settings, seed=None):
 
         for province in province_list[plane]:  # Do this here in case of terrain changes from mountains (curse Illwinter)
             terrain_list[plane].append([province.index, province.terrain_int])
+            province.coordinates = layout.coordinates[plane][province.index]
     layout.generate_gates()
 
     map_class.terrain_list = terrain_list

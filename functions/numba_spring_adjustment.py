@@ -21,13 +21,13 @@ def _numba_spring_electron_adjustment(key_list: np.array,
 
     velocity, electron_force, spring_force = np.zeros((dict_size, 2), dtype=np.float64), np.zeros((dict_size, 2), dtype=np.float64), np.zeros((dict_size, 2), dtype=np.float64)
 
-    equilibrium = False
+    equilibrium = 0
     for _ in range(iterations):
         for i in prange(dict_size):
-            electron_force[i], spring_force[i] = np.zeros(2), np.zeros(2)
             if fixed_array[i] == 1:
                 velocity[i] = np.zeros(2)
             else:
+                electron_force[i], spring_force[i] = np.zeros(2), np.zeros(2)
                 for j in range(dict_size):  # Calculate repulsion (to the nearest version of each node)
                     if i != j:
                         virtual_vectors = np.zeros((neighbours_size, 2), dtype=np.float64)
@@ -45,9 +45,10 @@ def _numba_spring_electron_adjustment(key_list: np.array,
 
         for c in range(dict_size):  # Check if non-fixed particles are within tolerance
             if np.linalg.norm(velocity[c]) > 0.0001:
+                equilibrium = 0
                 break
             if c == dict_size - 1:
-                equilibrium = True
+                equilibrium += 1
 
         for a in range(dict_size):  # Update the position
             coordinates[a] = coordinates[a] + velocity[a]
@@ -68,7 +69,7 @@ def _numba_spring_electron_adjustment(key_list: np.array,
 
                                 darts[a, b, axis] = int(new_value)  # Setting the dart for this vertex
                                 darts[b, a, axis] = int(-new_value)  # Setting the dart for other vertex
-        if equilibrium:
+        if equilibrium == 5:
             break
     return coordinates, darts
 
@@ -77,7 +78,7 @@ def spring_electron_adjustment(graph: dict,
                                coordinates: dict,
                                darts: dict,
                                weights: dict,
-                               fixed_points: list,
+                               fixed_points: dict,
                                map_size: tuple[int, int],
                                ratios: tuple[float, float, float],
                                iterations: int):
@@ -94,8 +95,7 @@ def spring_electron_adjustment(graph: dict,
         key_list[index] = i
         coordinates_array[index] = coordinates[i]
         weight_array[index] = weights[i]
-        if i in fixed_points:
-            fixed_array[index] = 1
+        fixed_array[index] = fixed_points[i]
 
         index2 = 0
         for j in graph:
@@ -105,7 +105,7 @@ def spring_electron_adjustment(graph: dict,
                 darts_array[index, index2] = darts[i][ji]
             else:
                 graph_array[index, index2] = 0
-                darts_array[index, index2] = [np.NaN, np.NaN]
+                darts_array[index, index2] = [-5, -5]
             index2 += 1
         index += 1
 

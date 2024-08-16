@@ -1,6 +1,4 @@
-import numpy as np
-
-from . import *
+from DreamAtlas import *
 
 
 def terrain_int2list(terrain_int):          # Function for separating terrain int into the components

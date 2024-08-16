@@ -5,7 +5,6 @@ def embed_region_graph(graph: dict,
                        map_size: tuple[int, int],
                        scale_down: float,
                        seed: int):
-    rd.seed(seed)
 
     graph_range = range(1, 1 + len(graph))
 
@@ -25,7 +24,8 @@ def embed_region_graph(graph: dict,
                 target_graph[(int(x / scale_down), int(y / scale_down))].append((x_coord, y_coord))
 
     target_graph = ntx.Graph(incoming_graph_data=target_graph)
-    initial_embedding, worked = mnm.find_embedding(ntx.Graph(incoming_graph_data=graph), target_graph, return_overlap=True, random_seed=seed)
+
+    initial_embedding, worked = mnm.find_embedding(ntx.Graph(incoming_graph_data=graph), target_graph, return_overlap=True, random_seed=seed, verbose=1)
 
     # Form the subgraph of the target graph
     subgraph_nodes, node_2_index = list(), dict()

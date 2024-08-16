@@ -385,12 +385,17 @@ class DominionsMap:
                     for ax in plane_axs:
                         ax.plot([x0, x1], [y0, y1], 'k-')
 
-            for i in virtual_graph:
-                if i <= max(self.layout.graph[plane]):
-                    x0, y0 = virtual_coordinates[i]
-                    for ax in plane_axs:
-                        ax.plot(x0, y0, 'ro')
-                        ax.text(x0, y0, str(i))
+            for province in self.province_list[plane]:
+                x0, y0 = province.coordinates
+                if province.capital_location:
+                    colour = 'bo'
+                elif province.fixed:
+                    colour = 'yo'
+                else:
+                    colour = 'ro'
+                for ax in plane_axs:
+                    ax.plot(x0, y0, colour)
+                    ax.text(x0, y0, str(province.index))
 
     # Printing the class returns this
     def __str__(self):

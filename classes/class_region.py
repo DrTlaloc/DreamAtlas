@@ -170,8 +170,8 @@ class Region:
     def embed_region(self,
                      global_coordinates: list,
                      rotation: float,
-                     scale: tuple[int, int],
-                     map_size: list[int, int],
+                     scale: list[list[int, int], ...],
+                     map_size: list[list[int, int], ...],
                      seed: int = None):  # Embeds the region in a global space
         dibber(self, seed)
 
@@ -180,7 +180,7 @@ class Region:
         for province in self.provinces:
             x_province = province.coordinates[0] * np.cos(radians) + province.coordinates[1] * np.sin(radians)
             y_province = -province.coordinates[0] * np.sin(radians) + province.coordinates[1] * np.cos(radians)
-            province.coordinates = [int(global_coordinates[0] + scale[0] * x_province) % map_size[0], int(global_coordinates[1] + scale[1] * y_province) % map_size[1]]
+            province.coordinates = [int(global_coordinates[0] + scale[province.plane][0] * x_province) % map_size[province.plane][0], int(global_coordinates[1] + scale[province.plane][1] * y_province) % map_size[province.plane][1]]
             province.parent_region = self.index
             province.size, province.shape = find_shape_size(province, self.settings)
 
