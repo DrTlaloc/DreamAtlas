@@ -12,7 +12,7 @@ def make_delaunay_graph(province_list: list[Province, ...],
         index = province.index
         x, y = province.coordinates
         graph[index] = []
-        coordinates[index] = [x, y]
+        coordinates[index] = [int(x), int(y)]
         darts[index] = []
 
     points = []
@@ -62,7 +62,7 @@ def make_delaunay_graph(province_list: list[Province, ...],
                         dart[axis] = 1
 
                 darts[index1].append(dart)
-                darts[index2].append(np.negative(dart))
+                darts[index2].append([-dart[0], -dart[1]])
 
     return graph, coordinates, darts
 

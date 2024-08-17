@@ -21,8 +21,7 @@ def _numba_spring_electron_adjustment(key_list: np.array,
 
     velocity, electron_force, spring_force = np.zeros((dict_size, 2), dtype=np.float64), np.zeros((dict_size, 2), dtype=np.float64), np.zeros((dict_size, 2), dtype=np.float64)
 
-    equilibrium = 0
-    for _ in range(iterations):
+    for iii in range(iterations):
         for i in prange(dict_size):
             if fixed_array[i] == 1:
                 velocity[i] = np.zeros(2)
@@ -43,12 +42,11 @@ def _numba_spring_electron_adjustment(key_list: np.array,
 
                 velocity[i] = damping_ratio * (velocity[i] + electron_force[i] + spring_force[i])
 
+        equilibrium = 1
         for c in range(dict_size):  # Check if non-fixed particles are within tolerance
-            if np.linalg.norm(velocity[c]) > 0.0001:
+            if np.linalg.norm(velocity[c]) > 0.001:
                 equilibrium = 0
                 break
-            if c == dict_size - 1:
-                equilibrium += 1
 
         for a in range(dict_size):  # Update the position
             coordinates[a] = coordinates[a] + velocity[a]
@@ -69,8 +67,9 @@ def _numba_spring_electron_adjustment(key_list: np.array,
 
                                 darts[a, b, axis] = int(new_value)  # Setting the dart for this vertex
                                 darts[b, a, axis] = int(-new_value)  # Setting the dart for other vertex
-        if equilibrium == 5:
+        if equilibrium:
             break
+
     return coordinates, darts
 
 
@@ -83,12 +82,12 @@ def spring_electron_adjustment(graph: dict,
                                ratios: tuple[float, float, float],
                                iterations: int):
 
-    key_list = np.zeros(len(graph), dtype=int)
-    graph_array = np.zeros((len(graph), len(graph)), dtype=int)
+    key_list = np.zeros(len(graph), dtype=np.int32)
+    graph_array = np.zeros((len(graph), len(graph)), dtype=np.int32)
     coordinates_array = np.zeros((len(graph), 2), dtype=np.float64)
-    darts_array = np.zeros((len(graph), len(graph), 2))
-    weight_array = np.ones(len(graph))
-    fixed_array = np.zeros(len(graph), dtype=int)
+    darts_array = np.zeros((len(graph), len(graph), 2), dtype=np.int32)
+    weight_array = np.ones(len(graph), dtype=np.float64)
+    fixed_array = np.zeros(len(graph), dtype=np.int32)
 
     index = 0
     for i in graph:
@@ -100,21 +99,16 @@ def spring_electron_adjustment(graph: dict,
         index2 = 0
         for j in graph:
             if j in graph[i]:
-                ji = graph[i].index(j)
                 graph_array[index, index2] = 1
-                darts_array[index, index2] = darts[i][ji]
-            else:
-                graph_array[index, index2] = 0
-                darts_array[index, index2] = [-5, -5]
+                darts_array[index, index2] = darts[i][graph[i].index(j)]
             index2 += 1
         index += 1
 
     _coordinates, _darts = _numba_spring_electron_adjustment(key_list, graph_array, coordinates_array, darts_array, weight_array, fixed_array, [map_size[0], map_size[1]], ratios, iterations)
-    coordinates_output = {}
-    darts_output = {}
+    coordinates_output, darts_output = dict(), dict()
     for i in range(len(key_list)):
         coordinates_output[key_list[i]] = _coordinates[i].astype(np.int32).tolist()
-        darts_output[key_list[i]] = []
+        darts_output[key_list[i]] = list()
         for j in range(len(key_list)):
             if graph_array[i, j] == 1:
                 darts_output[key_list[i]].append(_darts[i, j].tolist())
