@@ -229,7 +229,7 @@ class DominionsLayout:
             province = province_list[index]
             weights[province.index] = province.size
             if province.fixed:
-                fixed_points[province.index] = 1
+                fixed_points[province.index] = 0
             else:
                 fixed_points[province.index] = 0
                 lloyd_points.append(province_list[index].coordinates)
@@ -244,7 +244,7 @@ class DominionsLayout:
             province_list[count_2_index[index]].coordinates = lloyd_points[index]
 
         graph, coordinates, darts = make_delaunay_graph(province_list, map_size)
-        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.3, 0.4, 3000), iterations=3000)
+        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.3, 0.4, 2000), iterations=3000)
 
         self.graph[plane] = graph
         self.coordinates[plane] = coordinates
