@@ -21,7 +21,7 @@ TERRAIN_PREF_BALANCED, TERRAIN_PREF_PLAINS, TERRAIN_PREF_FOREST, TERRAIN_PREF_MO
 
 # Layout preference vector informs the land-sea split
 LAYOUT_PREFERENCES = [  # LAYOUT_PREF_XXXX = [cap circle split, rest of homeland split]
-    [1.0, 0.95],        # Land
+    [1.0, 0.9],        # Land
     [1.0, 1.0],         # Cave
     [0.8, 0.8],         # Coast
     [0.0, 0.9],         # Island

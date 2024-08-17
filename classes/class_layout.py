@@ -180,7 +180,24 @@ class DominionsLayout:
         if self.map.settings.throne_sites > len(potential_thrones):
             return Exception("\033[31m" + "Error: more thrones (%i) than good throne locations (%i)\x1b[0m" % (self.map.settings.throne_sites, len(potential_thrones)))
         if self.map.settings.throne_sites < len(potential_thrones):
-            print("\033[31m" + "Warning: less thrones (%i) than good throne locations (%i)\x1b[0m" % (self.map.settings.throne_sites, len(potential_thrones)))
+            print("\033[31m" + "Warning: less thrones (%i) than good throne locations (%i). Selecting best locations.\x1b[0m" % (self.map.settings.throne_sites, len(potential_thrones)))
+
+            while len(potential_thrones) > self.map.settings.throne_sites:
+                min_square_dist = np.inf
+                for throne in potential_thrones:
+                    square_sum = 0
+                    for other_throne in potential_thrones:
+                        min_dist = np.inf
+                        for neighbour in NEIGHBOURS_FULL:
+                            vector = other_throne + neighbour * map_size - throne
+                            distance = np.linalg.norm(vector)
+                            if distance < min_dist:
+                                min_dist = distance
+                        square_sum += min_dist ** 4
+                    if square_sum < min_square_dist:
+                        min_square_dist = square_sum
+                        to_remove = throne
+                potential_thrones.remove(to_remove)
 
         t = len(graph) + 1
         for _ in range(self.map.settings.throne_sites):  # Adding the throne to the dicts
@@ -212,7 +229,7 @@ class DominionsLayout:
             province = province_list[index]
             weights[province.index] = province.size
             if province.fixed:
-                fixed_points[province.index] = 0
+                fixed_points[province.index] = 1
             else:
                 fixed_points[province.index] = 0
                 lloyd_points.append(province_list[index].coordinates)
@@ -220,14 +237,14 @@ class DominionsLayout:
                 counter += 1
 
         lloyd = LloydRelaxation(np.array(lloyd_points))
-        for _ in range(2):
+        for _ in range(1):
             lloyd.relax()
         lloyd_points = lloyd.get_points()
         for index in range(len(lloyd_points)):
             province_list[count_2_index[index]].coordinates = lloyd_points[index]
 
         graph, coordinates, darts = make_delaunay_graph(province_list, map_size)
-        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.3, 0.4, 1000), iterations=3000)
+        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.3, 0.4, 3000), iterations=3000)
 
         self.graph[plane] = graph
         self.coordinates[plane] = coordinates
