@@ -173,6 +173,7 @@ REGION_TYPE = ['Throne', 'Homeland', 'Periphery']
 PI_2 = 2 * np.pi
 CAPITAL_POPULATION = 40000
 AGE_POPULATION_MODIFIERS = [0.8, 1.0, 1.2]
+TERRAIN_POPULATION_ORDER = {0: 4, 16: 2, 32: 1, 64: 0, 128: 3, 256: 5}  # TERRAIN_PREF_XXXX = [plains, highlands, swamp, waste, forest, farm]
 AVERAGE_POPULATION_SIZES = [5500, 11000, 16500]
 RESOURCE_SPECIFIC_TERRAINS = {4224: 1, 4112: 1.6, 4128: 2, 4096: 1, 132: 1, 20: 1.4, 2052: 1.2, 4: 1, 8388608: 2,
                               128: 1.6, 16: 1.4}
