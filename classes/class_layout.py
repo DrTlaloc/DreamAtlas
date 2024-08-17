@@ -220,14 +220,14 @@ class DominionsLayout:
                 counter += 1
 
         lloyd = LloydRelaxation(np.array(lloyd_points))
-        for _ in range(1):
+        for _ in range(2):
             lloyd.relax()
         lloyd_points = lloyd.get_points()
         for index in range(len(lloyd_points)):
             province_list[count_2_index[index]].coordinates = lloyd_points[index]
 
         graph, coordinates, darts = make_delaunay_graph(province_list, map_size)
-        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.3, 0.4, 5000), iterations=2000)
+        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.3, 0.4, 1000), iterations=3000)
 
         self.graph[plane] = graph
         self.coordinates[plane] = coordinates

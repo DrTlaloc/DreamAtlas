@@ -156,16 +156,29 @@ class Region:
 
         split_pop = np.linspace(0, 1, 1 + len(self.provinces))
         for index in range(1, len(split_pop)-1):
-            split_pop[index] += rd.uniform(-0.25/len(self.provinces), 0.25/len(self.provinces))
+            split_pop[index] += rd.uniform(-0.4/len(self.provinces), 0.4/len(self.provinces))
         new_pop = np.diff(np.multiply(split_pop, AGE_POPULATION_MODIFIERS[self.settings.age] * 10000 * len(self.provinces)))
+        new_pop.sort()
 
+        ordered_list = list()
         for index in range(len(self.provinces)):
             province = self.provinces[index]
+            key = 4
+            for bit in TERRAIN_PREF_BITS[1:]:
+                if has_terrain(province.terrain_int, bit):
+                    key = TERRAIN_POPULATION_ORDER[bit]
+            ordered_list.append([province, key, index])
+        ordered_list = sorted(ordered_list, key=lambda s: s[1])
+
+        for i in range(len(self.provinces)):
+            province = self.provinces[i]
             province.has_commands = True
             if province.capital_location:  # Assign capital population
                 province.population = CAPITAL_POPULATION
             else:
-                province.population = new_pop[index]
+                for j in range(len(ordered_list)):
+                    if ordered_list[j][2] == i:
+                        province.population = int(new_pop[j])
 
     def embed_region(self,
                      global_coordinates: list,
