@@ -124,7 +124,7 @@ class DominionsLayout:
         for i in graph:
             weights[i] = 1
             fixed_points[i] = 0
-        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.1, 0.3, 100), iterations=10000)  # final pass to clean up the embedding
+        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.1, 0.3, 100), iterations=1000)  # final pass to clean up the embedding
 
         # find rotations of peripheries
         for p in rotation:
@@ -244,7 +244,7 @@ class DominionsLayout:
             province_list[count_2_index[index]].coordinates = lloyd_points[index]
 
         graph, coordinates, darts = make_delaunay_graph(province_list, map_size)
-        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.3, 0.4, 2000), iterations=3000)
+        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.4, 0.4, 50), iterations=3000)
 
         self.graph[plane] = graph
         self.coordinates[plane] = coordinates

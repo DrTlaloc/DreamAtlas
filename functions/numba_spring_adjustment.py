@@ -1,3 +1,5 @@
+import numpy as np
+
 from DreamAtlas import *
 
 
@@ -14,59 +16,51 @@ def _numba_spring_electron_adjustment(key_list: np.array,
     dict_size = len(key_list)
     damping_ratio, spring_coefficient, electron_coefficient = ratios
     map_size_array = np.asarray(map_size, dtype=np.float64)
-    neighbours = np.array([[0, 0], [map_size[0], -map_size[1]], [map_size[0], 0], [map_size[0], map_size[1]],
-                           [0, map_size[1]], [-map_size[0], map_size[1]], [0, -map_size[1]],
-                           [-map_size[0], -map_size[1]], [-map_size[0], 0]], dtype=np.float64)
-    neighbours_size = len(neighbours)
+    neighbours = np.array([[0, 0], [map_size[0], -map_size[1]], [map_size[0], 0], [map_size[0], map_size[1]], [0, map_size[1]], [-map_size[0], map_size[1]], [0, -map_size[1]], [-map_size[0], -map_size[1]], [-map_size[0], 0]], dtype=np.float64)
+    velocity, min_vector = np.zeros((dict_size, 2), dtype=np.float64), np.full((dict_size, 2), 100000, dtype=np.float64)
 
-    velocity, electron_force, spring_force = np.zeros((dict_size, 2), dtype=np.float64), np.zeros((dict_size, 2), dtype=np.float64), np.zeros((dict_size, 2), dtype=np.float64)
-
-    for iii in range(iterations):
+    for _ in range(iterations):
+        electron_force, spring_force = np.zeros((dict_size, 2), dtype=np.float64), np.zeros((dict_size, 2), dtype=np.float64)
+        min_dist = np.full((dict_size, dict_size), 1000000, dtype=np.float64)
         for i in prange(dict_size):
-            if fixed_array[i] == 1:
-                velocity[i] = np.zeros(2)
-            else:
-                electron_force[i], spring_force[i] = np.zeros(2), np.zeros(2)
+            if fixed_array[i] == 0:
                 for j in range(dict_size):  # Calculate repulsion (to the nearest version of each node)
-                    if i != j:
-                        virtual_vectors = np.zeros((neighbours_size, 2), dtype=np.float64)
-                        virtual_distances = np.zeros(neighbours_size, dtype=np.float64)
-                        for n in range(neighbours_size):
-                            virtual_vectors[n] = coordinates[i] - coordinates[j] - neighbours[n]
-                            virtual_distances[n] = np.linalg.norm(virtual_vectors[n])
-                        min_dist = np.min(virtual_distances)
-                        electron_force[i] = electron_force[i] + electron_coefficient * weight_array[j] * virtual_vectors[np.where(virtual_distances == min_dist)] / (0.1 + min_dist ** 2)
+                    for n in neighbours:
+                        if np.linalg.norm(coordinates[i] - coordinates[j] - n) < min_dist[i, j]:
+                            min_vector[i] = coordinates[i] - coordinates[j] - n
+                            min_dist[i, j] = np.linalg.norm(min_vector[i])
+
+                    electron_force[i] = electron_force[i] + weight_array[j] * min_vector[i] / (0.1 + min_dist[i, j] ** 2)
 
                     if graph[i, j] == 1:
-                        spring_force[i] = spring_force[i] + spring_coefficient * (coordinates[j] + darts[i, j] * map_size_array - coordinates[i])
+                        spring_force[i] = spring_force[i] + coordinates[j] + darts[i, j] * map_size_array - coordinates[i]
 
-                velocity[i] = damping_ratio * (velocity[i] + electron_force[i] + spring_force[i])
+                velocity[i] = damping_ratio * (velocity[i] + electron_coefficient * electron_force[i] + spring_coefficient * spring_force[i])
 
         equilibrium = 1
         for c in range(dict_size):  # Check if non-fixed particles are within tolerance
-            if np.linalg.norm(velocity[c]) > 0.001:
+            if np.linalg.norm(velocity[c]) > 0.1:
                 equilibrium = 0
                 break
 
         for a in range(dict_size):  # Update the position
             coordinates[a] = coordinates[a] + velocity[a]
 
-            if not ((0 <= coordinates[a, 0] < map_size_array[0]) and (0 <= coordinates[a, 1] < map_size_array[1])):  # Checking torus constraints
-                for axis in range(2):
-                    if not (0 <= coordinates[a, axis] < map_size_array[axis]):
-                        dart_change = -np.sign(coordinates[a, axis])
-                        coordinates[a, axis] = int(coordinates[a, axis] % map_size_array[axis])
+            for axis in range(2):
+                if not (0 <= coordinates[a, axis] < map_size_array[axis]):
+                    dart_change = -np.sign(coordinates[a, axis])
+                    coordinates[a, axis] = int(coordinates[a, axis] % map_size_array[axis])
 
-                        for b in range(dict_size):  # Iterating over all of this vertex's connections
-                            if graph[a, b]:
-                                new_value = darts[a, b, axis] + dart_change
-                                if new_value < -1:
-                                    new_value = 1
-                                if new_value > 1:
-                                    new_value = -1
+                    for b in range(dict_size):  # Iterating over all of this vertex's connections
+                        if graph[a, b]:
+                            new_value = darts[a, b, axis] + dart_change
+                            if new_value < -1:
+                                new_value = 1
+                            if new_value > 1:
+                                new_value = -1
 
-                                darts[a, b, axis] = int(new_value)  # Setting the dart for this vertex
-                                darts[b, a, axis] = int(-new_value)  # Setting the dart for other vertex
+                            darts[a, b, axis] = int(new_value)  # Setting the dart for this vertex
+                            darts[b, a, axis] = int(-new_value)  # Setting the dart for other vertex
         if equilibrium:
             break
 
