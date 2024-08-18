@@ -217,16 +217,13 @@ class DominionsLayout:
         for index in range(len(province_list)):
             province = province_list[index]
             weights[province.index] = province.size
-            if province.fixed:
-                fixed_points[province.index] = 0
-            else:
-                fixed_points[province.index] = 0
-                lloyd_points.append(province_list[index].coordinates)
-                count_2_index[counter] = index
-                counter += 1
+            fixed_points[province.index] = 0
+            lloyd_points.append(province_list[index].coordinates)
+            count_2_index[counter] = index
+            counter += 1
 
         lloyd = LloydRelaxation(np.array(lloyd_points))
-        for _ in range(1):
+        for _ in range(2):
             lloyd.relax()
         lloyd_points = lloyd.get_points()
         for index in range(len(lloyd_points)):
@@ -234,6 +231,7 @@ class DominionsLayout:
 
         graph, coordinates, darts = make_delaunay_graph(province_list, map_size)
         coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.4, 0.4, 1000), iterations=3000)
+        print(graph)
 
         self.graph[plane] = graph
         self.coordinates[plane] = coordinates
