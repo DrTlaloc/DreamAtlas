@@ -124,7 +124,7 @@ class DominionsLayout:
         for i in graph:
             weights[i] = 1
             fixed_points[i] = 0
-        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.1, 0.3, 100), iterations=1000)  # final pass to clean up the embedding
+        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.4, 0.4, 50), iterations=3000)  # final pass to clean up the embedding
 
         # find rotations of peripheries
         for p in rotation:
