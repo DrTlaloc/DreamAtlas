@@ -30,10 +30,10 @@ def _numba_spring_electron_adjustment(key_list: np.array,
                             min_vector[i] = coordinates[i] - coordinates[j] - n
                             min_dist[i, j] = np.linalg.norm(min_vector[i])
 
-                    electron_force[i] = electron_force[i] + weight_array[j] * min_vector[i] / (0.1 + min_dist[i, j] ** 2)
+                    electron_force[i] = electron_force[i] + min_vector[i] / (0.001 + min_dist[i, j] ** 2)
 
                     if graph[i, j] == 1:
-                        spring_force[i] = spring_force[i] + coordinates[j] + darts[i, j] * map_size_array - coordinates[i]
+                        spring_force[i] = spring_force[i] + (coordinates[j] + darts[i, j] * map_size_array - coordinates[i]) / weight_array[j]
 
                 velocity[i] = damping_ratio * (velocity[i] + electron_coefficient * electron_force[i] + spring_coefficient * spring_force[i])
 
@@ -46,21 +46,22 @@ def _numba_spring_electron_adjustment(key_list: np.array,
         for a in range(dict_size):  # Update the position
             coordinates[a] = coordinates[a] + velocity[a]
 
-            for axis in range(2):
-                if not (0 <= coordinates[a, axis] < map_size_array[axis]):
-                    dart_change = -np.sign(coordinates[a, axis])
-                    coordinates[a, axis] = int(coordinates[a, axis] % map_size_array[axis])
+            if not ((0 <= coordinates[a, 0] < map_size_array[0]) and (0 <= coordinates[a, 1] < map_size_array[1])):
+                for axis in range(2):
+                    if not (0 <= coordinates[a, axis] < map_size_array[axis]):
+                        dart_change = -np.sign(coordinates[a, axis])
+                        coordinates[a, axis] = int(coordinates[a, axis] % map_size_array[axis])
 
-                    for b in range(dict_size):  # Iterating over all of this vertex's connections
-                        if graph[a, b]:
-                            new_value = darts[a, b, axis] + dart_change
-                            if new_value < -1:
-                                new_value = 1
-                            if new_value > 1:
-                                new_value = -1
+                        for b in range(dict_size):  # Iterating over all of this vertex's connections
+                            if graph[a, b]:
+                                new_value = darts[a, b, axis] + dart_change
+                                if new_value < -1:
+                                    new_value = 1
+                                if new_value > 1:
+                                    new_value = -1
 
-                            darts[a, b, axis] = int(new_value)  # Setting the dart for this vertex
-                            darts[b, a, axis] = int(-new_value)  # Setting the dart for other vertex
+                                darts[a, b, axis] = int(new_value)  # Setting the dart for this vertex
+                                darts[b, a, axis] = int(-new_value)  # Setting the dart for other vertex
         if equilibrium:
             break
 

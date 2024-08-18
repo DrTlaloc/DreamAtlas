@@ -35,10 +35,9 @@ def _jump_flood_algorithm(pixel_matrix: np.array,
         for x in prange(shape_x):
             for y in range(shape_y):
                 p = ping_matrix[x, y]
-                for n in range(len(neighbours)):
-                    neighbour = neighbours[n]
-                    qx = x + neighbour[0]  # Finds the virtual pixel location (can be outside the matrix)
-                    qy = y + neighbour[1]
+                for n in neighbours:
+                    qx = x + n[0]  # Finds the virtual pixel location (can be outside the matrix)
+                    qy = y + n[1]
 
                     if not hwrap:  # Ensuring the wraparound is respected, if there is no wrapping do not use virtual
                         qx %= shape_x
@@ -52,17 +51,16 @@ def _jump_flood_algorithm(pixel_matrix: np.array,
                     # Main logic of the Jump Flood Algorithm (if the pixels are identical or q has no info go to next)
                     if p == q or q == 0:
                         continue
-                    q_vector = np.subtract(ping_vector_matrix[ix, iy], neighbour)
+                    q_vector = np.subtract(ping_vector_matrix[ix, iy], n)
                     q_dist = np.linalg.norm(np.multiply(size_shape_factor[q], q_vector), ord=shape_array[q])
                     if p == 0:  # if our pixel is empty, populate it with q
                         pong_distance_matrix[x, y] = q_dist
                         pong_vector_matrix[x, y] = q_vector
                         pong_matrix[x, y] = q
-                    else:  # if our pixel is not empty, see if q is closer than p and if so populate it with q
-                        if ping_distance_matrix[x, y] > q_dist:
-                            pong_distance_matrix[x, y] = q_dist
-                            pong_vector_matrix[x, y] = q_vector
-                            pong_matrix[x, y] = q
+                    elif ping_distance_matrix[x, y] > q_dist:  # if our pixel is not empty, see if q is closer than p and if so populate it with q
+                        pong_distance_matrix[x, y] = q_dist
+                        pong_vector_matrix[x, y] = q_vector
+                        pong_matrix[x, y] = q
 
         ping_matrix = pong_matrix
         ping_distance_matrix = pong_distance_matrix

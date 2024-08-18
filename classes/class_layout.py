@@ -4,29 +4,21 @@ from . import *
 def make_delaunay_graph(province_list: list[Province, ...],
                         map_size: tuple[int, int],
                         wraparound: tuple[bool, bool] = (True, True)):
-    graph = {}
-    coordinates = {}
-    darts = {}
+
+    graph, coordinates, darts = dict(), dict(), dict()
 
     for province in province_list:  # Set up the dicts and assign coordinates
         index = province.index
         x, y = province.coordinates
-        graph[index] = []
-        coordinates[index] = [int(x), int(y)]
-        darts[index] = []
+        graph[index], coordinates[index], darts[index] = list(), [int(x), int(y)], list()
 
-    points = []
-    key_list = {}
-    counter = 0
+    points, key_list, counter = list(), dict(), 0
     for province in province_list:  # Set up the virtual points on the toroidal plane
-        index = province.index
-        x0, y0 = province.coordinates
         for neighbour in NEIGHBOURS_FULL:
-            x = x0 + neighbour[0] * map_size[0]
-            y = y0 + neighbour[1] * map_size[1]
-            if (-0.25 * map_size[0] <= x < 1.25 * map_size[0]) and (-0.25 * map_size[1] <= y < 1.25 * map_size[1]):
+            x, y = province.coordinates + np.multiply(neighbour, map_size)
+            if (-0.5 * map_size[0] <= x < 1.5 * map_size[0]) and (-0.5 * map_size[1] <= y < 1.5 * map_size[1]):
                 points.append([x, y])
-                key_list[counter] = index
+                key_list[counter] = province.index
                 counter += 1
 
     def less_first(a, b):
@@ -34,22 +26,18 @@ def make_delaunay_graph(province_list: list[Province, ...],
 
     tri = sc.spatial.Delaunay(np.array(points))
 
-    list_of_edges = []
+    list_of_edges = list()
     for triangle in tri.simplices:
         for e1, e2 in [[0, 1], [1, 2], [2, 0]]:  # for all edges of triangle
             list_of_edges.append(less_first(triangle[e1], triangle[e2]))  # always lesser index first
     array_of_edges = np.unique(list_of_edges, axis=0)  # remove duplicates
 
-    done_edges = []
+    done_edges = list()
     for p1, p2 in array_of_edges:
-        index1 = key_list[p1]
-        index2 = key_list[p2]
+        index1, index2 = key_list[p1], key_list[p2]
         if [index1, index2] not in done_edges:
-
-            i_coord = tri.points[p1]
-            j_coord = tri.points[p2]
-            if (0 <= i_coord[0] < map_size[0]) and (
-                    0 <= i_coord[1] < map_size[1]):  # only do this for nodes in the graph
+            i_coord, j_coord = tri.points[p1], tri.points[p2]
+            if (0 <= i_coord[0] < map_size[0]) and (0 <= i_coord[1] < map_size[1]):  # only do this for nodes in the map
                 done_edges.append([index2, index1])
                 graph[index1].append(index2)
                 graph[index2].append(index1)
@@ -105,6 +93,7 @@ class DominionsLayout:
         # Now add periphery regions in between the players
         done_edges, rotation, p = set(), dict(), len(graph)
         for i in range(1, 1 + len(graph)):
+            rotation[i] = 0
             for connection in range(len(graph[i])):
                 j = graph[i][connection]
                 if (i, j) not in done_edges:
@@ -124,7 +113,7 @@ class DominionsLayout:
         for i in graph:
             weights[i] = 1
             fixed_points[i] = 0
-        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.4, 0.4, 50), iterations=3000)  # final pass to clean up the embedding
+        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.2, 0.4, 50), iterations=3000)  # final pass to clean up the embedding
 
         # find rotations of peripheries
         for p in rotation:
@@ -178,7 +167,7 @@ class DominionsLayout:
 
         # Assign these as good throne locations
         if self.map.settings.throne_sites > len(potential_thrones):
-            return Exception("\033[31m" + "Error: more thrones (%i) than good throne locations (%i)\x1b[0m" % (self.map.settings.throne_sites, len(potential_thrones)))
+            raise Exception("\033[31m" + "Error: more thrones (%i) than good throne locations (%i)\x1b[0m" % (self.map.settings.throne_sites, len(potential_thrones)))
         if self.map.settings.throne_sites < len(potential_thrones):
             print("\033[31m" + "Warning: less thrones (%i) than good throne locations (%i). Selecting best locations.\x1b[0m" % (self.map.settings.throne_sites, len(potential_thrones)))
 
@@ -244,7 +233,7 @@ class DominionsLayout:
             province_list[count_2_index[index]].coordinates = lloyd_points[index]
 
         graph, coordinates, darts = make_delaunay_graph(province_list, map_size)
-        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.4, 0.4, 50), iterations=3000)
+        coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.4, 0.4, 1000), iterations=3000)
 
         self.graph[plane] = graph
         self.coordinates[plane] = coordinates
@@ -253,8 +242,8 @@ class DominionsLayout:
     def generate_neighbours(self,
                             plane: int):
 
-        done_provinces = {0}
-        self.neighbours[plane] = []
+        done_provinces = set()
+        self.neighbours[plane] = list()
         self.min_dist[plane] = np.Inf
 
         for i in self.graph[plane]:  # Assigning all graph edges as neighbours
@@ -274,9 +263,9 @@ class DominionsLayout:
         dibber(self, seed)  # Setting random seed
 
         if not self.neighbours[plane]:
-            return Exception('No neighbours')
-        self.special_neighbours[plane] = []
-        index_2_prov = {}
+            raise Exception('No neighbours')
+        self.special_neighbours[plane] = list()
+        index_2_prov = dict()
         for province in self.map.province_list[plane]:
             index_2_prov[province.index] = province
 
