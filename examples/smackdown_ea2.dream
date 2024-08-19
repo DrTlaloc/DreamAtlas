@@ -3,7 +3,7 @@
 -- Please try to alter only the inputs for the settings, there is no guarantee that an incorrect settings file will work as intended...
 
 -- General settings
-#seed 7
+#seed 600
 #map_title "Summer_Smackdown_EA2"
 #wraparound 3
 #art_style 0
@@ -37,3 +37,6 @@
 #nation 15
 #nation 20
 #nation 11
+
+-- Adds unconnected province for the omniscience mod nation in the underground
+#omniscience

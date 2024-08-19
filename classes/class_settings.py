@@ -21,6 +21,7 @@ class DreamAtlasSettings:
                  nations: list[int, ...] = None,
                  custom_nations: list[list[int, int, int, int, int], ...] = None,
                  age: int = None,
+                 omniscience: bool = False,
                  seed: int = None):
 
         # General settings
@@ -83,6 +84,7 @@ class DreamAtlasSettings:
         self.nations = nations
         self.custom_nations = custom_nations
         self.age = age
+        self.omniscience = omniscience
         self.base_radius = 0.5
 
     def read_settings_file(self, filename):
@@ -129,3 +131,5 @@ class DreamAtlasSettings:
                     self.custom_nations.append([int(_[1]), str(_[2]), str(_[3]), int(_[4]), int(_[5]), int(_[6]), int(_[7])])
                 if _[0] == '#age':
                     self.age = int(_[1])
+                if _[0] == '#omniscience':
+                    self.omniscience = True

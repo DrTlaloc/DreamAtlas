@@ -39,5 +39,5 @@
 #nation 57
 
 -- Adds unconnected province for the omniscience mod nation in the underground
-#add_omniscience
+#omniscience
 

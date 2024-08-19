@@ -5,6 +5,7 @@ class Province:
 
     def __init__(self,
                  index: int = None,
+                 name: str = None,
                  plane: int = None,
                  coordinates: list = None,
                  fixed: bool = False,
@@ -35,6 +36,7 @@ class Province:
 
         # Graph data
         self.index = index
+        self.name = name
         self.plane = plane
         self.coordinates = coordinates
         self.fixed = fixed

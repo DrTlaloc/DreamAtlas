@@ -113,6 +113,7 @@ class DominionsLayout:
         for i in graph:
             weights[i] = 1
             fixed_points[i] = 0
+
         coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.2, 0.4, 50), iterations=3000)  # final pass to clean up the embedding
 
         # find rotations of peripheries
@@ -231,7 +232,6 @@ class DominionsLayout:
 
         graph, coordinates, darts = make_delaunay_graph(province_list, map_size)
         coordinates, darts = spring_electron_adjustment(graph, coordinates, darts, weights, fixed_points, map_size, ratios=(0.4, 0.4, 1000), iterations=3000)
-        print(graph)
 
         self.graph[plane] = graph
         self.coordinates[plane] = coordinates
@@ -366,5 +366,6 @@ class DominionsLayout:
                 ax.text(x0, y0, str(i))
             ax.set(xlim=(0, self.map.map_size[plane][0]), ylim=(0, self.map.map_size[plane][1]))
 
+    def verbose(self):
 
-
+        x = 1

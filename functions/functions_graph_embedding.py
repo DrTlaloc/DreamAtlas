@@ -25,9 +25,12 @@ def embed_region_graph(graph: dict,
 
     target_graph = ntx.Graph(incoming_graph_data=target_graph)
     while True:
-        initial_embedding, worked = mnm.find_embedding(ntx.Graph(incoming_graph_data=graph), target_graph, return_overlap=True, random_seed=seed, verbose=1)
+        initial_embedding, worked = mnm.find_embedding(ntx.Graph(incoming_graph_data=graph), target_graph, return_overlap=True, random_seed=seed)
         if worked:
             break
+        else:
+            seed = rd.randint(0, 100000)
+            print('\033[31mEmbedding failed: Trying with new seed (%i)\x1b[0m' % seed)
 
     # Form the subgraph of the target graph
     subgraph_nodes, node_2_index = list(), dict()

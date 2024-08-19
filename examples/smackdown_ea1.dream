@@ -37,3 +37,6 @@
 #nation 18
 #nation 21
 #nation 23
+
+-- Adds unconnected province for the omniscience mod nation in the underground
+#omniscience
