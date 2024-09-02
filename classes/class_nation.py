@@ -14,7 +14,7 @@ class Nation:
                 self.name = entry[1]
                 self.tagline = entry[2]
 
-        # Nation homeland settings
+        # Nation homeland config
         for entry in HOMELANDS_INFO:
             if entry[0] == self.index:
                 self.terrain_profile = entry[1]

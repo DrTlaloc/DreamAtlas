@@ -298,8 +298,7 @@ class DominionsMap:
 
         with open(filepath, "wb") as f:  # Format is little endian binary which requires data to be converted
 
-            # Write headline map data
-            f.write(struct.pack("<iiiiqhii", 898933, 3, int(self.map_size[plane][0]), int(self.map_size[plane][1]), 0,
+            f.write(struct.pack("<iiiiqhii", 898933, 3, int(self.map_size[plane][0]), int(self.map_size[plane][1]), 0,  # Write headline map data
                                 int((self.min_dist[plane] % 1.0) * 10000), int(self.min_dist[plane]), int(len(self.province_list[plane]))))
 
             for province in self.province_list[plane]:  # Write pixel positions of each 'capital' (fort) and the 'spec' (if its deep sea, unknown why this is)
@@ -329,8 +328,7 @@ class DominionsMap:
             plane_str = '_plane%i' % plane
             if plane == 1:
                 plane_str = ''
-
-            if self.settings.art_style == 0:
+            if self.settings.art_style == 0:  # d6m art
                 self.image_file[plane] = '%s%s.d6m' % (name, plane_str)  # Make surface
                 self.make_map_file(plane=plane, filepath=os.path.join(map_folder, '%s%s.map' % (name, plane_str)))
                 self.make_d6m(plane=plane, filepath=os.path.join(map_folder, '%s%s.d6m' % (name, plane_str)))

@@ -1,9 +1,7 @@
-import pathlib
-
 from . import *
 
 
-# Region settings
+# Region config
 ########################################################################################################################
 
 # Terrain preference vector is the weighting for each type of terrain
@@ -21,7 +19,7 @@ TERRAIN_PREF_BALANCED, TERRAIN_PREF_PLAINS, TERRAIN_PREF_FOREST, TERRAIN_PREF_MO
 
 # Layout preference vector informs the land-sea split
 LAYOUT_PREFERENCES = [  # LAYOUT_PREF_XXXX = [cap circle split, rest of homeland split]
-    [1.0, 0.9],        # Land
+    [1.0, 0.9],         # Land
     [1.0, 1.0],         # Cave
     [0.8, 0.8],         # Coast
     [0.0, 0.9],         # Island
@@ -128,7 +126,7 @@ HOMELANDS_INFO = [
     [107, TERRAIN_PREF_DESERT, LAYOUT_PREF_LAND, 64, 1],            # Gath
     [108, TERRAIN_PREF_KARST, LAYOUT_PREF_LAND, 128, 1],            # Patala
     [109, TERRAIN_PREF_PLAINS, LAYOUT_PREF_LAND, 0, 1],             # Tien Chi
-    [110, TERRAIN_PREF_MOUNTAINS, LAYOUT_PREF_LAND, 0, 1],          # Jomon
+    [110, TERRAIN_PREF_MOUNTAINS, LAYOUT_PREF_COAST, 0, 1],         # Jomon
     [111, TERRAIN_PREF_FOREST, LAYOUT_PREF_LAND, 128, 1],           # Mictlan
     [112, TERRAIN_PREF_BALANCED, LAYOUT_PREF_CAVE, 0, 2],           # Xibalba
     [113, TERRAIN_PREF_DESERT, LAYOUT_PREF_LAND, 32, 1],            # Ctis
@@ -145,7 +143,7 @@ HOMELANDS_INFO = [
     [127, TERRAIN_PREF_BALANCED, LAYOUT_PREF_DEEPS, 2052, 1],       # Ryleh
 ]
 
-# Periphery settings
+# Periphery config
 PERIPHERY_INFO = [
     [TERRAIN_PREF_BALANCED, LAYOUT_PREF_LAND],      # 0 BORDERS
     [TERRAIN_PREF_BALANCED, LAYOUT_PREF_COAST],     # 1 COASTLINES
@@ -161,7 +159,7 @@ PERIPHERY_INFO = [
     [TERRAIN_PREF_KARST, LAYOUT_PREF_DEEPS]         # 11 UNDERSEA
 ]
 
-# Connections settings [Standard border, Mountain pass, River border, Impassable, Road, River bridge, Impassable mountain]
+# Connections config [Standard border, Mountain pass, River border, Impassable, Road, River bridge, Impassable mountain]
 NEIGHBOUR_SPECIAL_WEIGHTS = [0.8, 0.05, 0.05, 0, 0.05, 0.02, 0.05]
 # check 33,
 

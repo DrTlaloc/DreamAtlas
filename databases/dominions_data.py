@@ -1,4 +1,3 @@
-
 # DOMINIONS DATA
 TERRAIN_DATA = [
     [None, 0, 'Plains'], [0, 1, 'Small province'], [1, 2, 'Large province'], [2, 4, 'Sea'],
@@ -12,7 +11,8 @@ TERRAIN_DATA = [
     [27, 134217728, 'Bad throne location'],
     [30, 1073741824, 'Warmer'], [31, 2147483648, 'Colder'], [32, 4294967296, 'Invisible'], [33, 8589934592, 'Vast'],
     [34, 17179869184, 'Infernal waste'], [35, 34359738368, 'Void'], [36, 68719476736, 'Cave wall'],
-    [37, 137438953472, 'Has gate'], [38, 274877906944, 'Flooded'], [39, 549755813888, 'Attackers rout once'],  # [40, 1099511627776, 'No effect'],
+    [37, 137438953472, 'Has gate'], [38, 274877906944, 'Flooded'], [39, 549755813888, 'Attackers rout once'],
+    # [40, 1099511627776, 'No effect'],
     # [41, 2199023255552, 'No effect'],
     [59, 576460752303423488, 'Cave wall effect']
 ]
@@ -41,7 +41,8 @@ MA_NATIONS = [
     [65, 'Naba', 'Queens of the Desert'], [66, 'Uruk', 'City States'],
     [67, 'Ind', 'Magnificent Kingdom of Exalted Virtue'], [68, 'Bandar Log', 'Land of the Apes'],
     [69, 'Tien Chi', 'Imperial Bureaucracy'], [70, 'Shinuyama', 'Land of the Bakemono'],
-    [71, 'Caelum', 'Reign of the Seraphim'], [72, 'Nazca', 'Kingdom of the Sun'], [73, 'Mictlan', 'Reign of the Lawgiver'],
+    [71, 'Caelum', 'Reign of the Seraphim'], [72, 'Nazca', 'Kingdom of the Sun'],
+    [73, 'Mictlan', 'Reign of the Lawgiver'],
     [74, 'Xibalba', 'Flooded Caves'], [75, 'Ctis', 'Miasma'], [76, 'Machaka', 'Reign of Sorcerors'],
     [77, 'Phaeacia', 'Isle of the Dark Ships'], [78, 'Vanheim', 'Arrival of Man'], [79, 'Vanarus', 'Land of the Chuds'],
     [80, 'Jotunheim', 'Iron Woods'], [81, 'Nidavangr', 'Bear, Wolf and Crow'], [85, 'Ys', 'Morgen Queens'],
@@ -58,7 +59,8 @@ LA_NATIONS = [
     [110, 'Jomon', 'Human Daimyos'], [111, 'Mictlan', 'Blood and Rain'], [112, 'Xibalba', 'Return of the Zotz'],
     [113, 'Ctis', 'Desert Tombs'], [115, 'Midgard', 'Age of Men'], [116, 'Bogarus', 'Age of Heroes'],
     [117, 'Utgard', 'Well of Urd'], [118, 'Vaettiheim', 'Wolf Kin Jarldom'], [119, 'Feminie', 'Sage-Queens'],
-    [120, 'Piconye', 'Legacy of the Prester King'], [121, 'Andramania', 'Dog Republic'], [123, 'Pyrene', 'Demon Knights'],
+    [120, 'Piconye', 'Legacy of the Prester King'], [121, 'Andramania', 'Dog Republic'],
+    [123, 'Pyrene', 'Demon Knights'],
     [125, 'Erytheia', 'Kingdom of Two Worlds'], [126, 'Atlantis', 'Frozen Sea'], [127, 'Rlyeh', 'Dreamlands']
 ]
 
@@ -68,6 +70,7 @@ OTHER_NATIONS = [
     [4, 'Roaming Independents', 'e.g. Barbarians']
 ]
 
+AGE_NATIONS = [EA_NATIONS, MA_NATIONS, LA_NATIONS]
 ALL_NATIONS = OTHER_NATIONS + EA_NATIONS + MA_NATIONS + LA_NATIONS
 
 VICTORY_CONDITIONS = [

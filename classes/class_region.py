@@ -31,8 +31,8 @@ class Region:
         for nation in self.nations:  # Adjusts the seed based on the nation (so that every region isn't identical)
             self.seed *= nation.index
 
-        self.graph = {}         # Graph is a dictionary for the province graph
-        self.provinces = []     # Provinces is a list for the province classes in the homeland
+        self.graph = dict()         # Graph is a dictionary for the province graph
+        self.provinces = list()     # Provinces is a list for the province classes in the homeland
 
         if self.is_homeland:  # Loading terrain/layout info
             self.terrain_pref, self.layout = self.nations[0].terrain_profile, self.nations[0].layout
@@ -44,13 +44,7 @@ class Region:
     def generate_graph(self,
                        seed: int = None):
         dibber(self, seed)
-        self.graph = {0: []}
-        self.provinces = []
-
-        # Loading constants from settings file
-        variance = self.settings.variance
-        spread_range = variance**2 * PI_2 / self.settings.cap_connections
-        base_radius = self.settings.base_radius
+        self.graph, self.provinces = {0: []}, list()
 
         # Generating the anchor province
         new_province = Province(plane=1, coordinates=[0, 0])
@@ -71,17 +65,18 @@ class Region:
         self.provinces.append(new_province)
 
         # Generate the anchor connections, rotating randomly, then adding some small random angle/radius change
+        spread_range = 0.25 * PI_2 / self.settings.cap_connections
         if self.anchor_connections > 0:
             angles = np.linspace(0, PI_2, self.anchor_connections, endpoint=False)
-            angles += rd.uniform(0, variance * np.pi / self.anchor_connections)
-            radii = [base_radius] * self.anchor_connections
+            angles += rd.uniform(0, 0.5 * np.pi / self.anchor_connections)
 
-            for index in range(self.anchor_connections):
-                self.graph[0] = self.graph[0] + [index + 1]
-                self.graph[index + 1] = [0]
+            for i in range(self.anchor_connections):
+                self.graph[0] = self.graph[0] + [i + 1]
+                self.graph[i + 1] = [0]
 
-                theta = angles[index] + rd.uniform(-spread_range, spread_range)
-                radius = radii[index] + rd.uniform(-0.2 * variance, 0.2 * variance)
+                theta = angles[i] + rd.uniform(-spread_range, spread_range)
+                # radius = 1 + rd.uniform(-0.1, 0.1)
+                radius = 0.05
                 x = radius * np.cos(theta)
                 y = radius * np.sin(theta)
                 new_province = Province(plane=1, coordinates=[x, y])
@@ -91,16 +86,16 @@ class Region:
 
         # Place the remaining extra provinces attached to non-anchor provinces
         if extra_provinces > 0:
-            for province in range(extra_provinces):
-                anchor = 1 + rd.choice(range(self.anchor_connections))
-                index = 2 + self.anchor_connections + province
+            for i in range(extra_provinces):
+                a = 1 + rd.choice(range(self.anchor_connections))
+                j = 2 + self.anchor_connections + i
 
-                self.graph[anchor] = self.graph[anchor] + [index]
-                self.graph[index] = [anchor]
+                self.graph[a] = self.graph[a] + [j]
+                self.graph[j] = [a]
 
-                theta = angles[anchor - 1] + variance * rd.uniform(-np.pi, np.pi)
-                radius = base_radius + rd.uniform(0, 0.3 * variance)
-                x0, y0 = self.provinces[anchor].coordinates
+                theta = angles[a - 1] + 0.5 * rd.uniform(-np.pi, np.pi)
+                radius = 1 + rd.uniform(0, 0.15)
+                x0, y0 = self.provinces[a].coordinates
                 x = x0 + radius * np.cos(theta)
                 y = y0 + radius * np.sin(theta)
                 new_province = Province(plane=1, coordinates=[x, y])
@@ -111,8 +106,8 @@ class Region:
         dibber(self, seed)
 
         # Apply the terrain and land/sea/cave tags to each province
-        for index in range(len(self.provinces)):
-            province = self.provinces[index]
+        for i in range(len(self.provinces)):
+            province = self.provinces[i]
 
             if province.capital_location:
                 province.terrain_int += self.nations[0].cap_terrain  # Capital terrain
@@ -120,9 +115,9 @@ class Region:
             else:
                 # province.terrain_int += 512  # No start location
 
-                if index <= self.anchor_connections:  # cap circle
+                if i <= self.anchor_connections:  # cap circle
                     if not self.is_throne:
-                        if index / self.anchor_connections > self.layout[0]:  # land/sea
+                        if i / self.anchor_connections > self.layout[0]:  # land/sea
                             province.terrain_int += 4
                 else:  # other homeland provinces
                     if rd.random() > self.layout[1]:  # land/sea

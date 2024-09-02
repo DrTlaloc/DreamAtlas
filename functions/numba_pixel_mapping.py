@@ -2,7 +2,7 @@
 from DreamAtlas import *
 
 
-@njit(parallel=True)
+@njit(parallel=True, cache=True)
 def _jump_flood_algorithm(pixel_matrix: np.array,
                           seed_array: np.array,
                           step_size: int,
@@ -153,7 +153,7 @@ def find_pixel_ownership(coordinates_dict: dict,
 #     return pb_list
 #
 #
-# @njit(parallel=True)
+# @njit(parallel=True, cache=True)
 # def _numba_pb_allocation(pixel_matrix):
 #     x_size, y_size = pixel_matrix.shape
 #     split_pb_list = np.zeros((y_size, x_size, 4), dtype=np.int32)
@@ -174,8 +174,9 @@ def find_pixel_ownership(coordinates_dict: dict,
 #
 #     return split_pb_list
 
+
 def pb_pixel_allocation(pixel_matrix):
-    pixel_ownership_list = []
+    pixel_ownership_list = list()
     x_size, y_size = pixel_matrix.shape
     for y in range(y_size):
         pb_length = 1

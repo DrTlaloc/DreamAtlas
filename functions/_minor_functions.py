@@ -33,10 +33,15 @@ def find_shape_size(province, settings):  # Function for calculating the size of
     return size, shape
 
 
+def has_terrain(ti, t):  # Checks terrain ints for specific terrains
+
+    return ti & t == t
+
+
 def terrain_2_resource_stats(terrain_int_list: list[int, ...],
                              age: int):
 
-    resource_stats = []
+    resource_stats = list()
 
     for terrain_int in terrain_int_list:
 
@@ -49,18 +54,13 @@ def terrain_2_resource_stats(terrain_int_list: list[int, ...],
             average *= 0.5
 
         for specific_terrain in RESOURCE_SPECIFIC_TERRAINS:
-            if terrain_int & specific_terrain == specific_terrain:
+            if has_terrain(terrain_int, specific_terrain):
                 average *= RESOURCE_SPECIFIC_TERRAINS[specific_terrain]
 
         average *= AGE_POPULATION_MODIFIERS[age]
         resource_stats.append(average)
 
     return resource_stats
-
-
-def has_terrain(ti, t):  # Checks terrain ints for specific terrains
-
-    return ti & t == t
 
 
 def nations_2_periphery(nations):

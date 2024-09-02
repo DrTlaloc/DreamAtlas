@@ -3,6 +3,7 @@ from DreamAtlas import *
 
 def DreamAtlasGenerator(settings: type(DreamAtlasSettings) = None,
                         debug: bool = False,
+                        ui: bool = False,
                         seed: int = None):
 
     map_class = DominionsMap(settings.index)

@@ -1,9 +1,7 @@
-import numpy as np
-
 from DreamAtlas import *
 
 
-@njit(parallel=True)
+@njit(parallel=True, cache=True)
 def _numba_spring_electron_adjustment(key_list: np.array,
                                       graph: np.array,
                                       coordinates: np.array,
@@ -88,9 +86,6 @@ def spring_electron_adjustment(graph: dict,
     for i in graph:
         key_list[index] = i
         coordinates_array[index] = coordinates[i]
-        weight_array[index] = weights[i]
-        fixed_array[index] = fixed_points[i]
-
         index2 = 0
         for j in graph:
             if j in graph[i]:
@@ -98,6 +93,18 @@ def spring_electron_adjustment(graph: dict,
                 darts_array[index, index2] = darts[i][graph[i].index(j)]
             index2 += 1
         index += 1
+
+    if weights is not None:
+        index = 0
+        for i in graph:
+            weight_array[index] = weights[i]
+            index += 1
+
+    if fixed_points is not None:
+        index = 0
+        for i in graph:
+            fixed_array[index] = fixed_points[i]
+            index += 1
 
     _coordinates, _darts = _numba_spring_electron_adjustment(key_list, graph_array, coordinates_array, darts_array, weight_array, fixed_array, [map_size[0], map_size[1]], ratios, iterations)
     coordinates_output, darts_output = dict(), dict()
