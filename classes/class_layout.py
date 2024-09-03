@@ -72,13 +72,13 @@ class DominionsLayout:
         self.anchor_set = {0}
 
         # Province level layout - list per plane
-        self.graph = [{} for _ in range(10)]
-        self.coordinates = [{} for _ in range(10)]
-        self.darts = [{} for _ in range(10)]
-        self.edge_types = [[] for _ in range(10)]
-        self.neighbours = [[] for _ in range(10)]
-        self.special_neighbours = [[] for _ in range(10)]
-        self.gates = [[] for _ in range(10)]
+        self.graph = [dict() for _ in range(10)]
+        self.coordinates = [dict() for _ in range(10)]
+        self.darts = [dict() for _ in range(10)]
+        self.edge_types = [list() for _ in range(10)]
+        self.neighbours = [list() for _ in range(10)]
+        self.special_neighbours = [list() for _ in range(10)]
+        self.gates = [list() for _ in range(10)]
         self.min_dist = [np.Inf for _ in range(10)]
 
     def generate_region_layout(self,
@@ -292,7 +292,7 @@ class DominionsLayout:
                        seed: int = None):
         dibber(self, seed)  # Setting random seed
 
-        self.gates, region_plane_dict, region_list = [[] for _ in range(10)], dict(), list()
+        self.gates, region_plane_dict, region_list = [[[0, 0]] for _ in range(10)], dict(), list()
         for plane in range(1, 10):  # sort the provinces into region-plane buckets and remove invalid candidates
             region_plane_dict[plane] = dict()
             for province in self.map.province_list[plane]:
@@ -306,7 +306,7 @@ class DominionsLayout:
 
         gate = 1
         for region in region_list:  # randomly gate them
-            planes = []
+            planes = list()
             for plane in range(1, 10):
                 try:
                     thing = len(region_plane_dict[plane][region])
