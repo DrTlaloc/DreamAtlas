@@ -1,135 +1,112 @@
 from . import *
 
+# Info to build UI dynamically frames, buttons, [attribute, type, widget, label, options]
+UI_CONFIG_SETTINGS = {
+    'label_frames': [
+        ['Map Info', 0],
+        ['General Settings', 1],
+        ['Map Sliders', 2],
+        ['Additional Options', 3],
+        ['Vanilla Nations', 4],
+        ['Generic/Custom Nations', 5]],
+    'buttons': [2, 3, 4, 5, 6],
+    'attributes': {
+        'map_title': [str, 0, 'Map Title', None, 1],
+        'seed': [int, 0, 'Seed', None, 1],
+        'description': [str, 0, 'Description', None, 1],
+
+        'art_style': [int, 1, 'Art Style', ['.d6m'], 1],
+        'age': [int, 1, 'Age', ['Early Age', 'Middle Age', 'Late Age'], 1],
+        'wraparound': [int, 1, 'Wraparound', ['None', 'Horizontal', 'Vertical', 'Full'], 1],
+        'pop_balancing': [int, 1, 'Population Balancing', ['Vanilla', 'Soft', 'Hard'], 1],
+        'cave_type': [int, 1, 'Cave Type', ['Sparse', 'Tunnels', 'Caverns', 'Hollow Earth'], 0],
+        'water_type': [int, 1, 'Underwater Type', ['Lakes', 'Seven Seas', 'Panthallassa'], 0],
+
+        'cap_connections': [int, 2, 'Capital Connections', [3, 8], 1],
+        'player_neighbours': [int, 2, 'Player Neighbours', [2, 7], 1],
+        'homeland_size': [int, 2, 'Homeland Size', [4, 12], 1],
+        'periphery_size': [int, 2, 'Periphery Size', [1, 8], 1],
+        'throne_sites': [int, 2, 'Throne Sites', [4, 32], 1],
+        'site_frequency': [int, 2, 'Site Frequency', [40, 100], 1],
+        'water_province_value': [int, 2, 'Water Province Value %', [50, 200], 0],
+        'water_province_percent': [int, 2, 'UW %', [0, 400], 0],
+        'cave_province_value': [int, 2, 'Cave Province Value %', [50, 200], 0],
+        'cave_province_percent': [int, 2, 'Cave %', [50, 400], 0],
+
+        'disciples': [int, 3, 'Disciples', None, 0],
+        'omniscience': [int, 3, 'Omniscience', None, 1],
+
+        'nations': [list, 4, 'Vanilla Nations', None, 1],
+
+        'custom_nations': [list, 5, 'Custom/Generic Nations', None, 1]
+    }
+}
+
 
 class DreamAtlasSettings:
 
-    def __init__(self,
-                 index: int,
-                 map_title: str = None,
-                 wraparound: tuple[bool, bool] = None,
-                 art_style: int = None,
-                 variance: float = None,
-                 pop_balancing: int = None,
-                 site_frequency: int = None,
-                 water_province_size: float = None,
-                 cave_province_size: float = None,
-                 cap_connections: int = None,
-                 homeland_size: int = None,
-                 periphery_size: int = None,
-                 throne_sites: int = None,
-                 player_neighbours: int = None,
-                 nations: list[int, ...] = None,
-                 custom_nations: list[list[int, int, int, int, int], ...] = None,
-                 age: int = None,
-                 omniscience: bool = False,
-                 seed: int = None):
+    def __init__(self, index: int):  # DreamAtlas generator settings
 
-        # General settings
         self.index = index
-        if seed is None:
-            seed = 1
-        if map_title is None:
-            map_title = 'DreamAtlas_%i' % self.index
-        if wraparound is None:
-            wraparound = 0
-        if art_style is None:
-            art_style = 0
+        self.seed: int = 0
+        self.description: str = None
+        self.map_title: str = None
+        self.art_style: int = None
+        self.wraparound: int = None
+        self.pop_balancing: int = None
+        self.site_frequency: int = None
+        self.water_province_value: float = None
+        self.water_type: int = None
+        self.water_province_percent: float = None
+        self.cave_province_value: float = None
+        self.cave_type: int = None
+        self.cave_province_percent: float = None
+        self.cap_connections: int = None
+        self.homeland_size: int = None
+        self.periphery_size: int = None
+        self.throne_sites: int = None
+        self.player_neighbours: int = None
+        self.disciples: bool = False
+        self.nations: list[list[int]] = list()
+        self.custom_nations: list[list[int]] = list()
+        self.generic_nations: list[list[int]] = list()
+        self.age: int = None
+        self.omniscience: bool = False
 
-        self.seed = seed
-        self.map_title = map_title
-        self.wraparound = wraparound
-        self.art_style = art_style
+    def load_file(self, filename):
 
-        # Balance/flavour settings
-        if variance is None:
-            variance = 0.5
-        if pop_balancing is None:
-            pop_balancing = 0
-        if site_frequency is None:
-            site_frequency = 60
-        if water_province_size is None:
-            water_province_size = 2
-        if cave_province_size is None:
-            cave_province_size = 1.5
-        if cap_connections is None:
-            cap_connections = 5
-        if homeland_size is None:
-            homeland_size = 10
-        if periphery_size is None:
-            periphery_size = 3
-        if throne_sites is None:
-            throne_sites = 10
-        if player_neighbours is None:
-            player_neighbours = 4
-            
-        self.variance = variance
-        self.pop_balancing = pop_balancing
-        self.site_frequency = site_frequency
-        self.water_province_size = water_province_size
-        self.cave_province_size = cave_province_size
-        self.cap_connections = cap_connections
-        self.homeland_size = homeland_size
-        self.periphery_size = periphery_size            
-        self.throne_sites = throne_sites
-        self.player_neighbours = player_neighbours
-
-        # Info about nations/age
-        if nations is None:
-            nations = []
-        if custom_nations is None:
-            custom_nations = []
-        if age is None:
-            age = 2
-            
-        self.nations = nations
-        self.custom_nations = custom_nations
-        self.age = age
-        self.omniscience = omniscience
-        self.base_radius = 0.5
-
-    def read_settings_file(self, filename):
+        self.__init__(self.index)  # Reset class
 
         with open(filename, 'r') as f:
             for _ in f.readlines():
-                if _[0] != '#':
-                    continue
+                if _[0] == '#':  # Only do anything if the line starts with a command tag
+                    _ = _.split()
+                    attribute = _[0].strip('#')
+                    if attribute == 'nation':
+                        self.nations.append([int(_[1]), int(_[2])])
+                    elif attribute == 'custom_nation':
+                        self.custom_nations.append([int(_[1]), str(_[2]), str(_[3]), int(_[4]), int(_[5]), int(_[6]), int(_[7]), int(_[8])])
+                    else:
+                        attribute_type, widget, label, options, active = UI_CONFIG_SETTINGS['attributes'][attribute]
+                        setattr(self, attribute, attribute_type(_[1]))  # Single entry
 
-                _ = _.split()
+    def save_file(self, filename):
 
-                if _[0] == '#seed':
-                    self.seed = _[1]
-                if _[0] == '#map_title':
-                    self.map_title = _[1]
-                if _[0] == '#wraparound':
-                    self.wraparound = int(_[1])
-                if _[0] == '#art_style':
-                    self.art_style = int(_[1])
+        with open(filename, 'w') as f:  # Writes all the settings to a file
+            for attribute in self.__dict__:
+                if attribute == 'nations':
+                    for i in getattr(self, attribute):
+                        f.write(f'#nation {i[0]} {i[1]}\n')
+                elif attribute == 'custom_nations':
+                    for i in getattr(self, attribute):
+                        f.write(f'#customnation {i[0]} {i[1]}\n')
+                else:
+                    f.write(f'#{attribute} %{getattr(self, attribute)}\n')
 
-                if _[0] == '#variance':
-                    self.variance = float(_[1])
-                if _[0] == '#pop_balancing':
-                    self.pop_balancing = int(_[1])
-                if _[0] == '#site_frequency':
-                    self.site_frequency = int(_[1])
-                if _[0] == '#water_province_size':
-                    self.water_province_size = float(_[1])
-                if _[0] == '#cave_province_size':
-                    self.cave_province_size = float(_[1])
-                if _[0] == '#cap_connections':
-                    self.cap_connections = int(_[1])
-                if _[0] == '#homeland_size':
-                    self.homeland_size = int(_[1])
-                if _[0] == '#periphery_size':
-                    self.periphery_size = int(_[1])
-                if _[0] == '#throne_sites':
-                    self.throne_sites = int(_[1])
-                if _[0] == '#player_neighbours':
-                    self.player_neighbours = int(_[1])
-                if _[0] == '#nation':
-                    self.nations.append(int(_[1]))
-                if _[0] == '#customnation':
-                    self.custom_nations.append([int(_[1]), str(_[2]), str(_[3]), int(_[4]), int(_[5]), int(_[6]), int(_[7])])
-                if _[0] == '#age':
-                    self.age = int(_[1])
-                if _[0] == '#omniscience':
-                    self.omniscience = True
+    def __str__(self):
+
+        string = f'\nType - {type(self)}\n\n'
+        for key in self.__dict__:
+            string += f'{key} : {self.__dict__[key]}\n'
+
+        return string

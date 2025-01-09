@@ -1,8 +1,6 @@
-from . import *
-
-
-# Region config
-########################################################################################################################
+import numpy as np
+import pathlib
+import ttkbootstrap as ttk
 
 # Terrain preference vector is the weighting for each type of terrain
 TERRAIN_PREF_BITS = [0, 16, 32, 64, 128, 256]
@@ -11,26 +9,30 @@ TERRAIN_PREFERENCES = [         # TERRAIN_PREF_XXXX = [plains, highlands, swamp,
     [10, 1, 2, 1, 0.5, 0.5],    # Plains
     [3, 1, 1, 0.5, 5, 2],       # Forest
     [3, 4, 1, 1, 2, 1],         # Mountains
-    [3, 1, 0.5, 3, 0.5, 0.5],   # Desert
+    [3, 1, 1, 2, 1, 1],         # Desert
     [3, 1, 3, 0.5, 2, 1],       # Swamp
     [3, 2, 1, 1, 2, 1]          # Karst
 ]
 TERRAIN_PREF_BALANCED, TERRAIN_PREF_PLAINS, TERRAIN_PREF_FOREST, TERRAIN_PREF_MOUNTAINS, TERRAIN_PREF_DESERT, TERRAIN_PREF_SWAMP, TERRAIN_PREF_KARST = TERRAIN_PREFERENCES
 
 # Layout preference vector informs the land-sea split
-LAYOUT_PREFERENCES = [  # LAYOUT_PREF_XXXX = [cap circle split, rest of homeland split]
-    [1.0, 0.9],         # Land
-    [1.0, 1.0],         # Cave
-    [0.8, 0.8],         # Coast
-    [0.0, 0.9],         # Island
-    [0.0, 0.8],         # Deeps
-    [0.2, 0.8],         # Shallows
-    [0.7, 0.8]          # Lakes
+LAYOUT_PREFERENCES = [  # LAYOUT_PREF_XXXX = [cap terrain, cap provinces ratio, extra provinces ratio]
+    [1, 1.0, 0.85],         # Land
+    [1, 1.0, 1.0],          # Cave
+    [1, 0.8, 0.8],          # Coast
+    [1, 0.0, 0.9],          # Island
+    [0, 0.0, 0.8],          # Deeps
+    [0, 0.2, 0.8],          # Shallows
+    [1, 0.7, 0.8]           # Lakes
 ]
 LAYOUT_PREF_LAND, LAYOUT_PREF_CAVE, LAYOUT_PREF_COAST, LAYOUT_PREF_ISLAND, LAYOUT_PREF_DEEPS, LAYOUT_PREF_SHALLOWS, LAYOUT_PREF_LAKES = LAYOUT_PREFERENCES
 
-TERRAIN_2_HEIGHTS_DICT = {0: 0, 4: -600, 16: 200, 32: 50, 64: 300, 128: 90, 256: 250, 2048: -200, 4096: 1000, 8388608: 500, 68719476736: -100}
-TERRAIN_2_SHAPES_DICT = {0: 1, 4: 2, 8: 0.7, 16: 0.7, 32: 0.5, 64: 2, 128: 2, 256: 0.5, 2048: 1, 4096: 0.7, 8388608: 1, 68719476736: 1}
+# Blocker vector informs how different blockers are created
+BLOCKER_DETAILS = [  # BLOCKER_XXXX = [plane, terrain int, size]
+    [2, 4096 + 68719476736 + 576460752303423488, 4],       # Cave Wall
+    [1, 8392704, 4]                                        # Mountain Range
+]
+BLOCKER_CAVE_WALL, BLOCKER_MOUNTAIN_RANGE = BLOCKER_DETAILS
 
 # Homelands format: [Nation index, terrain preference, layout preference, capital terrain int, plane]
 HOMELANDS_INFO = [
@@ -140,7 +142,7 @@ HOMELANDS_INFO = [
     [123, TERRAIN_PREF_MOUNTAINS, LAYOUT_PREF_LAND, 128, 1],        # Pyrene
     [125, TERRAIN_PREF_BALANCED, LAYOUT_PREF_COAST, 0, 1],          # Erytheia
     [126, TERRAIN_PREF_BALANCED, LAYOUT_PREF_COAST, 0, 1],          # Atlantis
-    [127, TERRAIN_PREF_BALANCED, LAYOUT_PREF_DEEPS, 2052, 1],       # Ryleh
+    [127, TERRAIN_PREF_BALANCED, LAYOUT_PREF_DEEPS, 2052, 1]        # Ryleh
 ]
 
 # Periphery config
@@ -159,22 +161,32 @@ PERIPHERY_INFO = [
     [TERRAIN_PREF_KARST, LAYOUT_PREF_DEEPS]         # 11 UNDERSEA
 ]
 
+TERRAIN_2_HEIGHTS_DICT = {0: 0, 4: -600, 16: 200, 32: 50, 64: 300, 128: 90, 256: 250, 2048: -200, 4096: 1000, 8388608: 500, 68719476736: -100}
+TERRAIN_2_SHAPES_DICT = {0: 1, 4: 2, 8: 0.9, 16: 0.9, 32: 1.1, 64: 2, 128: 2, 256: 0.7, 2048: 1, 4096: 1.2, 8388608: 1, 68719476736: 1}
+TERRAIN_POPULATION_ORDER = {0: 4, 16: 2, 32: 1, 64: 0, 128: 3, 256: 5}  # TERRAIN_PREF_XXXX = [plains, highlands, swamp, waste, forest, farm]
+
 # Connections config [Standard border, Mountain pass, River border, Impassable, Road, River bridge, Impassable mountain]
-NEIGHBOUR_SPECIAL_WEIGHTS = [0.8, 0.05, 0.05, 0, 0.05, 0.02, 0.05]
-# check 33,
+NEIGHBOUR_SPECIAL_WEIGHTS = [0.8, 0.05, 0.05, 0, 0.05, 0.02, 0.05, 0]
+
+# UI DATA
+########################################################################################################################
+
+ART_ICON = r'C:\Users\amyau\PycharmProjects\mapTlaloc\DreamAtlas\GUI\gui_art\DreamAtlasLogoSquare.png'
+UI_STATES = (ttk.DISABLED, ttk.NORMAL, ttk.HIDDEN)
+UI_CONNECTION_COLOURS = {0: 'black', 33: 'red', 2: 'blue', 4: 'grey', 8: 'green', 16: 'brown', 36: 'red', 3: 'pink'}  # [0, 'Standard border'], [33, 'Mountain pass'], [2, 'River border'], [4, 'Impassable'], [8, 'Road'], [16, 'River bridge'], [36, 'Impassable mountain'], [3, 'Waterfalls']
 
 # UNIVERSAL FUNCTIONS AND VARIABLES
 ########################################################################################################################
-
 ROOT_DIR = pathlib.Path(__file__).parent
 REGION_TYPE = ['Throne', 'Homeland', 'Periphery']
-PI_2 = 2 * np.pi
+AGES = ['Early Age', 'Middle Age', 'Late Age']
+
 CAPITAL_POPULATION = 40000
+
 AGE_POPULATION_MODIFIERS = [0.8, 1.0, 1.2]
-TERRAIN_POPULATION_ORDER = {0: 4, 16: 2, 32: 1, 64: 0, 128: 3, 256: 5}  # TERRAIN_PREF_XXXX = [plains, highlands, swamp, waste, forest, farm]
+AGE_POPULATION_SIZES = [8000, 10000, 12000]
 AVERAGE_POPULATION_SIZES = [5500, 11000, 16500]
-RESOURCE_SPECIFIC_TERRAINS = {4224: 1, 4112: 1.6, 4128: 2, 4096: 1, 132: 1, 20: 1.4, 2052: 1.2, 4: 1, 8388608: 2,
-                              128: 1.6, 16: 1.4}
+RESOURCE_SPECIFIC_TERRAINS = {4224: 1, 4112: 1.6, 4128: 2, 4096: 1, 132: 1, 20: 1.4, 2052: 1.2, 4: 1, 8388608: 2, 128: 1.6, 16: 1.4}
 
 NEIGHBOURS_NO_WRAP = np.array([[0, 0]])
 NEIGHBOURS_X_WRAP = np.array([[0, 0], [1, 0], [-1, 0]])

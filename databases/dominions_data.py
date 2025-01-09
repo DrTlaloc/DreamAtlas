@@ -14,7 +14,7 @@ TERRAIN_DATA = [
     [37, 137438953472, 'Has gate'], [38, 274877906944, 'Flooded'], [39, 549755813888, 'Attackers rout once'],
     # [40, 1099511627776, 'No effect'],
     # [41, 2199023255552, 'No effect'],
-    [59, 576460752303423488, 'Cave wall effect']
+    [59, 576460752303423488, 'Cave wall effect'], [60, 1152921504606846976, 'Draw as UW']
 ]
 
 EA_NATIONS = [
@@ -22,7 +22,7 @@ EA_NATIONS = [
     [8, 'Ermor', 'New Faith'], [9, 'Sauromatia', 'Amazon Queens'], [10, 'Fomoria', 'The Cursed Ones'],
     [11, 'Tir na nog', 'Land of the Ever Young'], [12, 'Marverni', 'Time of Druids'], [13, 'Ulm', 'Enigma of Steel'],
     [14, 'Pyrene', 'Kingdom of the Bekrydes'], [15, 'Agartha', 'Pale Ones'], [16, 'Abysia', 'Children of Flame'],
-    [17, 'Hinnom', 'Sons of the Fallen'], [18, 'Ubar', 'Kingdom of the Unseen'], [19, 'Ur The', 'First City'],
+    [17, 'Hinnom', 'Sons of the Fallen'], [18, 'Ubar', 'Kingdom of the Unseen'], [19, 'Ur', 'The First City'],
     [20, 'Kailasa', 'Rise of the Ape Kings'], [21, 'Lanka', 'Land of Demons'], [22, 'Tien Chi', 'Spring and Autumn'],
     [23, 'Yomi', 'Oni Kings'], [24, 'Caelum', 'Eagle Kings'], [25, 'Mictlan', 'Reign of Blood'],
     [26, 'Xibalba', 'Vigil of the Sun'], [27, 'Ctis', 'Lizard Kings'], [28, 'Machaka', 'Lion Kings'],
@@ -118,5 +118,5 @@ FORT = [
 
 SPECIAL_NEIGHBOUR = [
     [0, 'Standard border'], [33, 'Mountain pass'], [2, 'River border'], [4, 'Impassable'], [8, 'Road'],
-    [16, 'River bridge'], [36, 'Impassable mountain']
+    [16, 'River bridge'], [36, 'Impassable mountain'], [3, 'Waterfalls']
 ]
