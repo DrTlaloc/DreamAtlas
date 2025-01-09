@@ -1,24 +1,24 @@
 # Importing dependencies
-import os
-import pathlib
-import struct
-import ctypes
-import matplotlib as mpl
-import matplotlib.cm as cm
-import matplotlib.pyplot as plt
-import numpy as np
-import scipy as sc
-import random as rd
-import networkx as ntx
-import minorminer as mnm
-import tkinter.filedialog as tkf
-import ttkbootstrap as ttk
-from ttkbootstrap.constants import *
-from numba import njit, prange
-from copy import copy
-from PIL import ImageShow, ImageTk, Image
-import time
-import cProfile
+import os                                   # Critical
+import pathlib                              # Critical
+import struct                               # Critical
+import ctypes                               # Not sure
+import matplotlib as mpl                    # Optional
+import matplotlib.cm as cm                  # Optional
+import matplotlib.pyplot as plt             # Optional
+import numpy as np                          # Critical
+import scipy as sc                          # Divest
+import random as rd                         # Divest
+import networkx as ntx                      # Divest
+import minorminer as mnm                    # Divest
+import tkinter.filedialog as tkf            # Critical
+import ttkbootstrap as ttk                  # Critical
+from ttkbootstrap.constants import *        # Critical
+from numba import njit, prange              # Critical
+from copy import copy                       # Critical
+from PIL import ImageShow, ImageTk, Image   # Critical
+import time                                 # Testing
+import cProfile                             # Testing
 
 
 # Importing classes and functions at the end avoids circular dependencies
