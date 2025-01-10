@@ -79,7 +79,7 @@ class DominionsLayout:
         self.neighbours = [list() for _ in range(10)]
         self.special_neighbours = [list() for _ in range(10)]
         self.gates = [list() for _ in range(10)]
-        self.min_dist = [np.Inf for _ in range(10)]
+        self.min_dist = [np.inf for _ in range(10)]
 
     def generate_region_layout(self,
                                seed: int = None):
@@ -242,7 +242,7 @@ class DominionsLayout:
 
         done_provinces = set()
         self.neighbours[plane] = list()
-        self.min_dist[plane] = np.Inf
+        self.min_dist[plane] = np.inf
 
         for i in self.graph[plane]:  # Assigning all graph edges as neighbours
             done_provinces.add(i)
