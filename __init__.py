@@ -18,4 +18,3 @@ from DreamAtlas.databases import *
 from DreamAtlas.functions import *
 from DreamAtlas.classes import *
 from DreamAtlas.generators import *
-from DreamAtlas.GUI import *
