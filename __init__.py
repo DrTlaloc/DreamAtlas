@@ -10,9 +10,6 @@ import scipy as sc
 import random as rd
 import networkx as ntx
 import minorminer as mnm
-import tkinter as tk
-import ttkbootstrap as ttk
-from ttkbootstrap.constants import *
 from numba import njit, prange
 from copy import copy
 
